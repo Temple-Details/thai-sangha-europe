@@ -481,6 +481,37 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .logo-preview-ph{width:80px;height:80px;border-radius:50%;background:var(--gold-light);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:2.2rem;margin-bottom:10px;}
 .upload-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;color:var(--text3);font-size:0.83rem;}
 .upload-area:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#222;color:#fff;padding:10px 22px;border-radius:8px;font-size:0.87rem;
+  opacity:0;transition:all 0.3s;z-index:600;pointer-events:none;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.success{background:#2E7D32;}
+.toast.error{background:#c00;}
+
+/* ── CONFIRM DIALOG ── */
+.confirm-box{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:700;
+  display:none;align-items:center;justify-content:center;}
+.confirm-box.show{display:flex;}
+.confirm-inner{background:#fff;border-radius:12px;padding:24px;width:min(360px,90vw);text-align:center;}
+.confirm-inner p{font-size:0.95rem;margin-bottom:18px;color:var(--text);}
+.confirm-btns{display:flex;gap:10px;}
+.confirm-btns button{flex:1;padding:9px;border:none;border-radius:6px;cursor:pointer;font-size:0.88rem;font-weight:600;}
+.btn-confirm-ok{background:var(--red);color:#fff;}
+.btn-confirm-cancel{background:#eee;color:var(--text2);}
+
+/* ── ADMIN SEARCH BAR ── */
+.admin-search{display:none;position:fixed;top:0;left:0;right:0;background:var(--red-dark);
+  padding:10px 16px;z-index:501;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.admin-search.show{display:flex;gap:10px;align-items:center;}
+.admin-search input{flex:1;padding:7px 12px;border-radius:6px;border:none;font-size:0.87rem;}
+.admin-search button{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:7px 14px;border-radius:6px;cursor:pointer;}
+
+/* ── ADD TEMPLE BTN ── */
+.btn-add-temple{display:inline-flex;align-items:center;gap:6px;background:#2E7D32;color:#fff;
+  border:none;border-radius:6px;padding:6px 16px;font-size:0.82rem;font-weight:600;cursor:pointer;margin-left:10px;}
+.btn-add-temple:hover{background:#1B5E20;}
 </style>
 </head>
 <body>
@@ -858,12 +889,14 @@ async function doLogin() {
   _adminUser = data.user;
   closeAdminLogin();
   showAdminBar();
+  showToast('✅ เข้าสู่ระบบสำเร็จ');
   render();
 }
 async function doLogout() {
   await _sb.auth.signOut();
   _adminUser = null;
   document.getElementById('adminBar').style.display = 'none';
+  showToast('ออกจากระบบแล้ว', 'success');
   render();
 }
 function showAdminBar() {
@@ -893,6 +926,14 @@ function openEdit(id) {
   document.getElementById('eEmail').value = t.email || '';
   document.getElementById('eWebsite').value = t.website || '';
   document.getElementById('eMonks').value = t.monks || '';
+  document.getElementById('eLandStatus').value = t.land_status || '';
+  document.getElementById('eUbosot').value = t.ubosot || '';
+  document.getElementById('eOrg_th').value = t.org_th || '';
+  document.getElementById('eOrg_en').value = t.org_en || '';
+  document.getElementById('eRegDate').value = t.reg_date || '';
+  document.getElementById('eZone').value = t.zone_num || 1;
+  document.getElementById('eZoneNum').value = t.zone_num || 1;
+  document.getElementById('eCountry').value = t.country || '';
   _editFile = null;
   const wrap = document.getElementById('logoPreviewWrap');
   wrap.innerHTML = t.logo_url
@@ -939,8 +980,111 @@ function compressImage(file, maxPx, maxBytes, callback) {
   };
   reader.readAsDataURL(file);
 }
-async function saveEdit() {
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.classList.remove('show'); }, 3000);
+}
+
+// ── Confirm Dialog ────────────────────────────────────────────
+let _confirmResolve = null;
+function showConfirm(msg) {
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBox').classList.add('show');
+    document.getElementById('confirmOk').onclick = () => { closeConfirm(); resolve(true); };
+  });
+}
+function closeConfirm() {
+  document.getElementById('confirmBox').classList.remove('show');
+  if (_confirmResolve) { _confirmResolve(false); _confirmResolve = null; }
+}
+
+// ── Admin Search ──────────────────────────────────────────────
+function openAdminSearch() {
+  document.getElementById('adminSearchBar').classList.add('show');
+  document.getElementById('adminSearchInput').value = '';
+  document.getElementById('adminSearchInput').focus();
+}
+function closeAdminSearch() {
+  document.getElementById('adminSearchBar').classList.remove('show');
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('adminSearchInput').addEventListener('input', e => {
+    const q = e.target.value.trim().toLowerCase();
+    if (!q) return;
+    const found = TEMPLES.filter(t =>
+      (t.name_th||'').toLowerCase().includes(q) ||
+      (t.name_en||'').toLowerCase().includes(q) ||
+      (t.org_th||'').toLowerCase().includes(q)
+    );
+    if (found.length === 1) {
+      closeAdminSearch();
+      openEdit(found[0].id);
+    } else if (found.length > 0 && found.length <= 5) {
+      // show quick list
+      const list = found.map(t => `<div onclick="closeAdminSearch();openEdit('${t.id}')" style="padding:6px 12px;cursor:pointer;color:#fff;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.1);">${t.name_th||t.org_th}</div>`).join('');
+      let dropdown = document.getElementById('adminSearchDropdown');
+      if (!dropdown) {
+        dropdown = document.createElement('div');
+        dropdown.id = 'adminSearchDropdown';
+        dropdown.style.cssText = 'position:absolute;top:100%;left:16px;background:var(--red-dark);border-radius:0 0 8px 8px;min-width:200px;z-index:502;';
+        document.getElementById('adminSearchBar').appendChild(dropdown);
+      }
+      dropdown.innerHTML = list;
+    }
+  });
+});
+
+// ── Remove Logo ───────────────────────────────────────────────
+async function removeLogo() {
   const id = document.getElementById('editId').value;
+  const confirmed = await showConfirm('ลบรูปโลโก้วัดนี้?');
+  if (!confirmed) return;
+  // Remove from storage
+  await _sb.storage.from('temple-logos').remove([id + '.jpg']);
+  // Update DB
+  await _sb.from('temples').update({ logo_url: null }).eq('id', id);
+  // Update local
+  const idx = TEMPLES.findIndex(x => x.id === id);
+  if (idx >= 0) TEMPLES[idx].logo_url = null;
+  _editFile = null;
+  document.getElementById('logoPreviewWrap').innerHTML = '<div class="logo-preview-ph">🕌</div>';
+  showToast('ลบรูปโลโก้แล้ว');
+}
+
+// ── Add New Temple ────────────────────────────────────────────
+function openAddTemple() {
+  // Clear all fields
+  ['editId','eName_th','eName_en','eAbbot','ePresident','eAddress',
+   'ePhone','eEmail','eWebsite','eRegDate'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  ['eMonks','eLandStatus','eUbosot','eZone','eCountry'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('editTitle').textContent = '➕ เพิ่มวัดใหม่';
+  document.getElementById('logoPreviewWrap').innerHTML = '<div class="logo-preview-ph">🕌</div>';
+  document.getElementById('editErr').textContent = '';
+  _editFile = null;
+  // Generate new ID
+  const year = new Date().getFullYear() + 543;
+  const zone = 1;
+  const num = String(TEMPLES.length + 1).padStart(3, '0');
+  document.getElementById('editId').value = `${year}.${zone}.${num}`;
+  document.getElementById('adminEditOverlay').classList.add('show');
+}
+
+async function saveEdit() {
+  const confirmed = await showConfirm('บันทึกข้อมูลวัดนี้?');
+  if (!confirmed) return;
+  const id = document.getElementById('editId').value;
+  const isNew = !TEMPLES.find(x => x.id === id);
   const updates = {
     name_th: document.getElementById('eName_th').value,
     name_en: document.getElementById('eName_en').value,
@@ -951,6 +1095,13 @@ async function saveEdit() {
     email: document.getElementById('eEmail').value,
     website: document.getElementById('eWebsite').value,
     monks: document.getElementById('eMonks').value,
+    land_status: document.getElementById('eLandStatus').value,
+    ubosot: document.getElementById('eUbosot').value,
+    org_th: document.getElementById('eOrg_th').value,
+    org_en: document.getElementById('eOrg_en').value,
+    reg_date: document.getElementById('eRegDate').value,
+    zone_num: parseInt(document.getElementById('eZone').value),
+    country: document.getElementById('eCountry').value,
     updated_at: new Date().toISOString(),
   };
   // Upload logo if selected
@@ -961,15 +1112,24 @@ async function saveEdit() {
     const { data: urlData } = _sb.storage.from('temple-logos').getPublicUrl(path);
     updates.logo_url = urlData.publicUrl + '?t=' + Date.now();
   }
-  const { error } = await _sb.from('temples').update(updates).eq('id', id);
-  if (error) { document.getElementById('editErr').textContent = 'บันทึกไม่สำเร็จ: ' + error.message; return; }
-  // Update local data
-  const idx = TEMPLES.findIndex(x => x.id === id);
-  if (idx >= 0) TEMPLES[idx] = { ...TEMPLES[idx], ...updates };
+  let dbError;
+  if (isNew) {
+    const { error } = await _sb.from('temples').insert({ id, ...updates });
+    dbError = error;
+    if (!error) { TEMPLES.push({ id, ...updates }); }
+  } else {
+    const { error } = await _sb.from('temples').update(updates).eq('id', id);
+    dbError = error;
+    if (!error) {
+      const idx = TEMPLES.findIndex(x => x.id === id);
+      if (idx >= 0) TEMPLES[idx] = { ...TEMPLES[idx], ...updates };
+    }
+  }
+  if (dbError) { document.getElementById('editErr').textContent = 'บันทึกไม่สำเร็จ: ' + dbError.message; return; }
+  showToast(isNew ? '✅ เพิ่มวัดใหม่สำเร็จ!' : '✅ บันทึกสำเร็จ!');
   closeEdit();
   render();
-  // Re-open modal with updated data
-  openModal(id);
+  if (!isNew) openModal(id);
 }
 
 // ── Admin trigger via ?admin in URL ──────────────────────────
@@ -982,6 +1142,27 @@ document.addEventListener('DOMContentLoaded', () => {
   loadTemples();
 });
 </script>
+
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM DIALOG -->
+<div class="confirm-box" id="confirmBox">
+  <div class="confirm-inner">
+    <p id="confirmMsg">แน่ใจหรือไม่?</p>
+    <div class="confirm-btns">
+      <button class="btn-confirm-ok" id="confirmOk">ยืนยัน</button>
+      <button class="btn-confirm-cancel" onclick="closeConfirm()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN SEARCH BAR -->
+<div class="admin-search" id="adminSearchBar">
+  <input type="text" id="adminSearchInput" placeholder="🔍 ค้นหาวัดที่จะแก้ไข...">
+  <button onclick="closeAdminSearch()">✕ ปิด</button>
+</div>
 
 <!-- ADMIN LOGIN MODAL -->
 <div class="modal-overlay" id="adminLoginOverlay">
@@ -1008,8 +1189,11 @@ document.addEventListener('DOMContentLoaded', () => {
     <input type="hidden" id="editId">
     <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px;">
       <div id="logoPreviewWrap"><div class="logo-preview-ph">🕌</div></div>
-      <div class="upload-area" onclick="document.getElementById('logoFile').click()" style="width:100%;margin-top:8px;">
-        📷 คลิกเพื่อเลือกรูปโลโก้ (ไม่เกิน 500KB หลัง compress)
+      <div style="display:flex;gap:8px;width:100%;margin-top:8px;">
+        <div class="upload-area" onclick="document.getElementById('logoFile').click()" style="flex:1;">
+          📷 เลือกรูปโลโก้
+        </div>
+        <button onclick="removeLogo()" style="background:#ffebee;color:#c00;border:1px solid #ffcdd2;border-radius:8px;padding:0 12px;cursor:pointer;font-size:0.8rem;white-space:nowrap;">🗑️ ลบรูป</button>
       </div>
       <input type="file" id="logoFile" accept="image/*" style="display:none" onchange="previewLogo(this)">
       <div style="font-size:0.75rem;color:var(--text3);margin-top:4px;">ระบบจะ resize เป็น 1000×1000px อัตโนมัติ</div>
@@ -1022,7 +1206,55 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="form-row"><label>โทรศัพท์</label><input type="text" id="ePhone"></div>
     <div class="form-row"><label>อีเมล</label><input type="email" id="eEmail"></div>
     <div class="form-row"><label>เว็บไซต์/โซเชียล</label><textarea id="eWebsite"></textarea></div>
-    <div class="form-row"><label>พระในพรรษา</label><input type="text" id="eMonks"></div>
+    <div class="form-row"><label>พระในพรรษา</label>
+      <select id="eMonks">
+        <option value="">-- เลือก --</option>
+        <option value="๑ รูป">๑ รูป</option>
+        <option value="๒-๓ รูป">๒-๓ รูป</option>
+        <option value="๔-๕ รูป">๔-๕ รูป</option>
+        <option value="๖-๑๐ รูป">๖-๑๐ รูป</option>
+        <option value="๑๐ รูปขึ้นไป">๑๐ รูปขึ้นไป</option>
+      </select>
+    </div>
+    <div class="form-row"><label>สถานะที่ดิน/อาคาร</label>
+      <select id="eLandStatus">
+        <option value="">-- เลือก --</option>
+        <option value="เจ้าของ(หมดหนี้สินแล้ว)">เจ้าของ (หมดหนี้สินแล้ว)</option>
+        <option value="เจ้าของ/กำลังผ่อนชำระ">เจ้าของ / กำลังผ่อนชำระ</option>
+        <option value="เช่า">เช่า</option>
+        <option value="อื่นๆ">อื่นๆ</option>
+      </select>
+    </div>
+    <div class="form-row"><label>อุโบสถ/พัทธสีมา</label>
+      <select id="eUbosot">
+        <option value="">-- เลือก --</option>
+        <option value="มีพัทธสีมา">มีพัทธสีมา</option>
+        <option value="ไม่มีพัทธสีมา">ไม่มีพัทธสีมา</option>
+        <option value="อยู่ระหว่างดำเนินการ">อยู่ระหว่างดำเนินการ</option>
+      </select>
+    </div>
+    <div class="form-row"><label>ชื่อองค์กร (ภาษาไทย)</label><input type="text" id="eOrg_th"></div>
+    <div class="form-row"><label>ชื่อองค์กร (ภาษาอังกฤษ)</label><input type="text" id="eOrg_en"></div>
+    <div class="form-row"><label>เขต</label>
+      <select id="eZone" onchange="document.getElementById('eZoneNum').value=this.value">
+        <option value="1">เขต ๑ (ยุโรปตะวันตก)</option>
+        <option value="2">เขต ๒ (เยอรมนี)</option>
+        <option value="3">เขต ๓ (สแกนดิเนเวีย)</option>
+        <option value="4">เขต ๔ (ยุโรปใต้และตะวันออก)</option>
+      </select>
+      <input type="hidden" id="eZoneNum">
+    </div>
+    <div class="form-row"><label>ประเทศ</label>
+      <select id="eCountry">
+        <option value="">-- เลือก --</option>
+        <option>เนเธอร์แลนด์</option><option>เยอรมนี</option><option>สวีเดน</option>
+        <option>นอร์เวย์</option><option>ฝรั่งเศส</option><option>ออสเตรีย</option>
+        <option>เดนมาร์ก</option><option>สวิตเซอร์แลนด์</option><option>อิตาลี</option>
+        <option>เบลเยียม</option><option>ลักแซมบวร์ก</option><option>ฟินแลนด์</option>
+        <option>ไอซ์แลนด์</option><option>เช็ก</option><option>ฮังการี</option><option>กรีซ</option>
+      </select>
+    </div>
+    <div class="form-row"><label>วันที่จดทะเบียน</label><input type="text" id="eRegDate" placeholder="เช่น 19.12.1975"></div>
     <div class="form-err" id="editErr"></div>
     <button class="btn-primary" onclick="saveEdit()">💾 บันทึก</button>
     <button class="btn-cancel" onclick="closeEdit()">ยกเลิก</button>
@@ -1031,7 +1263,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- ADMIN BAR (shown when logged in) -->
 <div class="admin-bar" id="adminBar" style="display:none;">
-  <span>🔑 Admin Mode: <span id="adminEmail2"></span></span>
+  <span>🔑 Admin Mode: <span id="adminEmail2"></span>
+    <button class="btn-add-temple" onclick="openAddTemple()">➕ เพิ่มวัดใหม่</button>
+    <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
+  </span>
   <button onclick="doLogout()">ออกจากระบบ</button>
 </div>
 
