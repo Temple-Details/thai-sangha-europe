@@ -1148,7 +1148,7 @@ async function saveEdit() {
 
 // ── Admin trigger via ?admin in URL ──────────────────────────
 
-// ── EXPORT EXCEL ──────────────────────────────────────────────
+// ── EXPORT EXCEL (styled) ────────────────────────────────────
 function exportExcel() {
   const list = filtered();
   const cols = [
@@ -1159,15 +1159,103 @@ function exportExcel() {
     ['land_status','สถานะที่ดิน'],['ubosot','อุโบสถ/พัทธสีมา'],
     ['country','ประเทศ'],['zone','เขต'],['zone_num','เลขเขต'],['reg_date','วันจดทะเบียน'],
   ];
+  const today = new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+  const zone = activeZone === 'all' ? 'ทั้งหมด' : 'เขต '+activeZone;
+
+  // Row 1: Title, Row 2: Subtitle, Row 3: blank, Row 4: Headers, Row 5+: Data
+  const titleRow = [`ทะเบียนวัดสมาชิก สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)`];
+  const subRow = [`เขต: ${zone}  |  จำนวน: ${list.length} วัด  |  ข้อมูล ณ วันที่ ${today}`];
+  const blankRow = [];
   const headers = cols.map(([,label]) => label);
   const rows = list.map(t => cols.map(([key]) => t[key] || ''));
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-  // Column widths
-  ws['!cols'] = cols.map(([key]) => ({ wch: ['address','website','org_th','org_en'].includes(key) ? 40 : 20 }));
+
+  const ws = XLSX.utils.aoa_to_sheet([titleRow, subRow, blankRow, headers, ...rows]);
+
+  // ── Column widths ──
+  const widths = { address:45, website:40, org_th:35, org_en:35, name_th:30, name_en:30, email:28 };
+  ws['!cols'] = cols.map(([key]) => ({ wch: widths[key] || 18 }));
+
+  // ── Merge title across all columns ──
+  const lastCol = cols.length - 1;
+  ws['!merges'] = [
+    { s:{r:0,c:0}, e:{r:0,c:lastCol} },
+    { s:{r:1,c:0}, e:{r:1,c:lastCol} },
+  ];
+
+  // ── Styles ──
+  const RED   = 'FF7B1A1A';
+  const GOLD  = 'FFC9963A';
+  const WHITE = 'FFFFFFFF';
+  const LGRAY = 'FFF5F5F5';
+  const DGRAY = 'FF555555';
+
+  const titleStyle = {
+    font:{ bold:true, sz:16, color:{rgb:WHITE} },
+    fill:{ fgColor:{rgb:RED} },
+    alignment:{ horizontal:'center', vertical:'center', wrapText:true },
+    border: makeBorder('thin', WHITE)
+  };
+  const subStyle = {
+    font:{ sz:10, color:{rgb:WHITE} },
+    fill:{ fgColor:{rgb:'FF4A0E0E'} },
+    alignment:{ horizontal:'center', vertical:'center' },
+  };
+  const headStyle = {
+    font:{ bold:true, sz:10, color:{rgb:WHITE} },
+    fill:{ fgColor:{rgb:GOLD} },
+    alignment:{ horizontal:'center', vertical:'center', wrapText:true },
+    border: makeBorder('thin', 'FF8B6020')
+  };
+  const evenStyle = {
+    font:{ sz:9 },
+    fill:{ fgColor:{rgb:WHITE} },
+    alignment:{ vertical:'center', wrapText:true },
+    border: makeBorder('thin', 'FFD0D0D0')
+  };
+  const oddStyle = {
+    font:{ sz:9 },
+    fill:{ fgColor:{rgb:LGRAY} },
+    alignment:{ vertical:'center', wrapText:true },
+    border: makeBorder('thin', 'FFD0D0D0')
+  };
+
+  function makeBorder(style, color) {
+    const s = { style, color:{rgb:color} };
+    return { top:s, bottom:s, left:s, right:s };
+  }
+  function cellRef(r, c) {
+    return XLSX.utils.encode_cell({r, c});
+  }
+  function applyStyle(r, style) {
+    for (let c = 0; c < cols.length; c++) {
+      const ref = cellRef(r, c);
+      if (!ws[ref]) ws[ref] = { v:'', t:'s' };
+      ws[ref].s = style;
+    }
+  }
+
+  // Apply title rows
+  applyStyle(0, titleStyle);
+  applyStyle(1, subStyle);
+  // Apply header row (row index 3)
+  applyStyle(3, headStyle);
+  // Apply data rows
+  rows.forEach((_, i) => {
+    applyStyle(4 + i, i % 2 === 0 ? evenStyle : oddStyle);
+  });
+
+  // Row heights
+  ws['!rows'] = [
+    { hpt: 32 }, // title
+    { hpt: 18 }, // subtitle
+    { hpt: 6  }, // blank
+    { hpt: 22 }, // header
+    ...rows.map(() => ({ hpt: 16 }))
+  ];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'วัดสมาชิก');
-  const zone = activeZone === 'all' ? 'ทั้งหมด' : 'เขต'+activeZone;
-  XLSX.writeFile(wb, `วัดสมาชิก_สธย_${zone}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `วัดสมาชิก_สธย_${zone.replace(' ','')}_${new Date().toISOString().slice(0,10)}.xlsx`, { cellStyles: true });
   showToast('✅ Export สำเร็จ ' + list.length + ' วัด');
 }
 
