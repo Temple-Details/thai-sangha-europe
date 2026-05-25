@@ -1101,6 +1101,7 @@ async function saveEdit() {
     org_en: document.getElementById('eOrg_en').value,
     reg_date: document.getElementById('eRegDate').value,
     zone_num: parseInt(document.getElementById('eZone').value),
+    zone: ['','เขต 1 (ยุโรปตะวันตก)','เขต 2 (ยุโรปกลาง)','เขต 3 (สแกนดิเนเวีย)','เขต 4 (ยุโรปใต้และตะวันออก)'][parseInt(document.getElementById('eZone').value)] || '',
     country: document.getElementById('eCountry').value,
     updated_at: new Date().toISOString(),
   };
@@ -1125,7 +1126,7 @@ async function saveEdit() {
       if (idx >= 0) TEMPLES[idx] = { ...TEMPLES[idx], ...updates };
     }
   }
-  if (dbError) { document.getElementById('editErr').textContent = 'บันทึกไม่สำเร็จ: ' + dbError.message; return; }
+  if (dbError) { const msg = 'บันทึกไม่สำเร็จ: ' + dbError.message; document.getElementById('editErr').textContent = msg; showToast(msg, 'error'); return; }
   showToast(isNew ? '✅ เพิ่มวัดใหม่สำเร็จ!' : '✅ บันทึกสำเร็จ!');
   closeEdit();
   render();
@@ -1133,11 +1134,17 @@ async function saveEdit() {
 }
 
 // ── Admin trigger via ?admin in URL ──────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Restore existing session (ไม่ต้อง login ใหม่หลัง refresh)
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) {
+    _adminUser = session.user;
+    showAdminBar();
+  }
   if (new URLSearchParams(window.location.search).has('admin')) {
-    // ลบ ?admin ออกจาก URL bar เพื่อไม่ให้เห็น
     history.replaceState({}, '', window.location.pathname);
-    openAdminLogin();
+    if (!_adminUser) openAdminLogin();
+    else showToast('✅ เข้าสู่ระบบอยู่แล้ว');
   }
   loadTemples();
 });
