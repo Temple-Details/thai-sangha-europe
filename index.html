@@ -686,7 +686,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 // ── Supabase ──────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yvpsqxtpmhxuwynpmxnv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_aftnDkZTFaxlnLuSla8G1g_0kXcsFjt';
-const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: false }
+});
 
 let TEMPLES = [];
 let _adminUser = null;
@@ -1044,8 +1046,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ── Remove Logo ───────────────────────────────────────────────
 async function removeLogo() {
   const id = document.getElementById('editId').value;
-  const confirmed = await showConfirm('ลบรูปโลโก้วัดนี้?');
-  if (!confirmed) return;
+  if (!confirm('ลบรูปโลโก้วัดนี้?')) return;
   // Remove from storage
   await _sb.storage.from('temple-logos').remove([id + '.jpg']);
   // Update DB
@@ -1081,8 +1082,10 @@ function openAddTemple() {
 }
 
 async function saveEdit() {
-  const confirmed = await showConfirm('บันทึกข้อมูลวัดนี้?');
-  if (!confirmed) return;
+  // Verify still logged in
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) { showToast('กรุณา Login ใหม่', 'error'); return; }
+  if (!confirm('บันทึกข้อมูลวัดนี้?')) return;
   const id = document.getElementById('editId').value;
   const isNew = !TEMPLES.find(x => x.id === id);
   const updates = {
@@ -1109,7 +1112,7 @@ async function saveEdit() {
   if (_editFile) {
     const path = `${id}.jpg`;
     const { error: upErr } = await _sb.storage.from('temple-logos').upload(path, _editFile, { upsert: true, contentType: 'image/jpeg' });
-    if (upErr) { document.getElementById('editErr').textContent = 'อัปโหลดรูปไม่สำเร็จ: ' + upErr.message; return; }
+    if (upErr) { const m='อัปโหลดรูปไม่สำเร็จ: '+upErr.message; document.getElementById('editErr').textContent=m; showToast(m,'error'); console.error('Upload error:',upErr); return; }
     const { data: urlData } = _sb.storage.from('temple-logos').getPublicUrl(path);
     updates.logo_url = urlData.publicUrl + '?t=' + Date.now();
   }
@@ -1135,16 +1138,9 @@ async function saveEdit() {
 
 // ── Admin trigger via ?admin in URL ──────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Restore existing session (ไม่ต้อง login ใหม่หลัง refresh)
-  const { data: { session } } = await _sb.auth.getSession();
-  if (session) {
-    _adminUser = session.user;
-    showAdminBar();
-  }
   if (new URLSearchParams(window.location.search).has('admin')) {
     history.replaceState({}, '', window.location.pathname);
-    if (!_adminUser) openAdminLogin();
-    else showToast('✅ เข้าสู่ระบบอยู่แล้ว');
+    openAdminLogin();
   }
   loadTemples();
 });
