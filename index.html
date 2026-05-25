@@ -6,6 +6,7 @@
 <title>วัดสมาชิก ส.ธ.ย. — สหภาพพระธรรมทูตไทยในทวีปยุโรป</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -619,6 +620,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <div class="f-divider"></div>
     <select class="country-sel" id="countryFilter"><option value="">🌍 ทุกประเทศ</option></select>
     <span class="result-info" id="resultInfo"></span>
+    <button id="exportBtn" onclick="exportExcel()" style="display:none;align-items:center;gap:5px;background:#1B5E20;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:0.78rem;font-weight:600;cursor:pointer;margin-left:8px;">📥 Export Excel</button>
   </div>
 </div>
 
@@ -687,7 +689,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 const SUPABASE_URL = 'https://yvpsqxtpmhxuwynpmxnv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_aftnDkZTFaxlnLuSla8G1g_0kXcsFjt';
 const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: { persistSession: false }
+  auth: {
+    persistSession: true,
+    storage: sessionStorage
+  }
 });
 
 let TEMPLES = [];
@@ -1137,10 +1142,133 @@ async function saveEdit() {
 }
 
 // ── Admin trigger via ?admin in URL ──────────────────────────
+
+// ── EXPORT EXCEL ──────────────────────────────────────────────
+function exportExcel() {
+  const list = filtered();
+  const cols = [
+    ['id','รหัสวัด'],['name_th','ชื่อวัด (ไทย)'],['name_en','ชื่อวัด (อังกฤษ)'],
+    ['org_th','ชื่อองค์กร (ไทย)'],['org_en','ชื่อองค์กร (อังกฤษ)'],
+    ['abbot','เจ้าอาวาส'],['president','ประธาน'],['monks','พระในพรรษา'],
+    ['address','ที่อยู่'],['phone','โทรศัพท์'],['email','อีเมล'],['website','เว็บไซต์'],
+    ['land_status','สถานะที่ดิน'],['ubosot','อุโบสถ/พัทธสีมา'],
+    ['country','ประเทศ'],['zone','เขต'],['zone_num','เลขเขต'],['reg_date','วันจดทะเบียน'],
+  ];
+  const headers = cols.map(([,label]) => label);
+  const rows = list.map(t => cols.map(([key]) => t[key] || ''));
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  // Column widths
+  ws['!cols'] = cols.map(([key]) => ({ wch: ['address','website','org_th','org_en'].includes(key) ? 40 : 20 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'วัดสมาชิก');
+  const zone = activeZone === 'all' ? 'ทั้งหมด' : 'เขต'+activeZone;
+  XLSX.writeFile(wb, `วัดสมาชิก_สธย_${zone}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast('✅ Export สำเร็จ ' + list.length + ' วัด');
+}
+
+// ── IMPORT EXCEL ──────────────────────────────────────────────
+const IMPORT_COLS = ['id','name_th','name_en','org_th','org_en','abbot','president',
+  'monks','address','phone','email','website','land_status','ubosot','country','zone','zone_num','reg_date'];
+let _importData = [];
+
+function downloadTemplate() {
+  const headers = ['id','name_th','name_en','org_th','org_en','abbot','president',
+    'monks','address','phone','email','website','land_status','ubosot','country','zone','zone_num','reg_date'];
+  const example = ['2565.1.001','วัดตัวอย่าง','Wat Example','มูลนิธิตัวอย่าง','Example Foundation',
+    'พระตัวอย่าง','นายตัวอย่าง','๒-๓ รูป','123 Example St, City','0123456789',
+    'example@email.com','www.example.com','เช่า','มีพัทธสีมา','เนเธอร์แลนด์',
+    'เขต 1 (ยุโรปตะวันตก)','1','01.01.2000'];
+  const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+  ws['!cols'] = headers.map(() => ({ wch: 25 }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Template');
+  XLSX.writeFile(wb, 'template_import_วัด.xlsx');
+}
+
+function openImport() {
+  resetImport();
+  document.getElementById('importOverlay').classList.add('show');
+}
+function closeImport() {
+  document.getElementById('importOverlay').classList.remove('show');
+  resetImport();
+}
+function resetImport() {
+  document.getElementById('importStep1').style.display = 'block';
+  document.getElementById('importStep2').style.display = 'none';
+  document.getElementById('importFile').value = '';
+  document.getElementById('importErr').textContent = '';
+  _importData = [];
+}
+
+function previewImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!raw.length) { document.getElementById('importErr').textContent = 'ไฟล์ว่างเปล่า'; return; }
+      // Map headers
+      const firstRow = raw[0];
+      const keys = Object.keys(firstRow);
+      if (!keys.includes('id')) { document.getElementById('importErr').textContent = 'ไม่พบคอลัมน์ "id" — กรุณาใช้ template ที่ถูกต้อง'; return; }
+      _importData = raw.map(row => {
+        const obj = {};
+        IMPORT_COLS.forEach(col => { if (row[col] !== undefined) obj[col] = String(row[col]).trim(); });
+        return obj;
+      }).filter(r => r.id);
+      // Count updates vs new
+      const existIds = new Set(TEMPLES.map(t => t.id));
+      const updates = _importData.filter(r => existIds.has(r.id)).length;
+      const news = _importData.length - updates;
+      document.getElementById('importSummary').innerHTML =
+        `<b>พบ ${_importData.length} รายการ:</b> อัปเดต <span style="color:var(--gold)">${updates} วัด</span> · เพิ่มใหม่ <span style="color:#2E7D32">${news} วัด</span>`;
+      // Preview table (first 10 rows)
+      const showCols = ['id','name_th','country','zone_num'];
+      document.getElementById('importPreviewHead').innerHTML = showCols.map(c => `<th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);">${c}</th>`).join('');
+      document.getElementById('importPreviewBody').innerHTML = _importData.slice(0,10).map(r =>
+        `<tr>${showCols.map(c => `<td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;">${r[c]||''}</td>`).join('')}</tr>`
+      ).join('') + (_importData.length > 10 ? `<tr><td colspan="${showCols.length}" style="padding:6px 8px;color:var(--text3);">... และอีก ${_importData.length-10} รายการ</td></tr>` : '');
+      document.getElementById('importStep1').style.display = 'none';
+      document.getElementById('importStep2').style.display = 'block';
+    } catch(err) {
+      document.getElementById('importErr').textContent = 'อ่านไฟล์ไม่ได้: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function doImport() {
+  if (!_importData.length) return;
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) { showToast('กรุณา Login ก่อน', 'error'); return; }
+  document.getElementById('importErr').textContent = 'กำลัง import...';
+  // Upsert all rows (update if exists, insert if new)
+  const { error } = await _sb.from('temples').upsert(_importData, { onConflict: 'id' });
+  if (error) {
+    document.getElementById('importErr').textContent = 'Import ไม่สำเร็จ: ' + error.message;
+    showToast('❌ Import ไม่สำเร็จ', 'error');
+    return;
+  }
+  showToast('✅ Import สำเร็จ ' + _importData.length + ' วัด');
+  closeImport();
+  await loadTemples();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  // Restore session จาก sessionStorage (ยังอยู่ถ้า refresh, หลุดถ้าปิด tab)
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) {
+    _adminUser = session.user;
+    showAdminBar();
+  }
   if (new URLSearchParams(window.location.search).has('admin')) {
     history.replaceState({}, '', window.location.pathname);
-    openAdminLogin();
+    if (!_adminUser) openAdminLogin();
+    else showToast('✅ เข้าสู่ระบบอยู่แล้ว');
   }
   loadTemples();
 });
@@ -1165,6 +1293,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 <div class="admin-search" id="adminSearchBar">
   <input type="text" id="adminSearchInput" placeholder="🔍 ค้นหาวัดที่จะแก้ไข...">
   <button onclick="closeAdminSearch()">✕ ปิด</button>
+</div>
+
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importOverlay">
+  <div class="modal-box" style="width:min(600px,95vw);">
+    <h3>📤 Import ข้อมูลวัดจาก Excel</h3>
+    <div id="importStep1">
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:12px;">ไฟล์ Excel ต้องมีคอลัมน์ตรงกับ template — ถ้า id ซ้ำจะอัปเดตทับข้อมูลเดิม</p>
+      <button onclick="downloadTemplate()" style="display:inline-flex;align-items:center;gap:5px;background:#1565C0;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:0.82rem;cursor:pointer;margin-bottom:14px;">📋 ดาวน์โหลด Template</button>
+      <div class="upload-area" onclick="document.getElementById('importFile').click()" style="margin-bottom:12px;">
+        📂 คลิกเพื่อเลือกไฟล์ Excel (.xlsx)
+      </div>
+      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="previewImport(this)">
+    </div>
+    <div id="importStep2" style="display:none;">
+      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:10px;" id="importSummary"></div>
+      <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:14px;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+          <thead style="background:var(--bg);position:sticky;top:0;">
+            <tr id="importPreviewHead"></tr>
+          </thead>
+          <tbody id="importPreviewBody"></tbody>
+        </table>
+      </div>
+      <button onclick="doImport()" class="btn-primary">✅ ยืนยัน Import</button>
+      <button onclick="resetImport()" class="btn-cancel">↩ เลือกไฟล์ใหม่</button>
+    </div>
+    <div class="form-err" id="importErr"></div>
+    <button class="btn-cancel" onclick="closeImport()" style="margin-top:8px;">ปิด</button>
+  </div>
 </div>
 
 <!-- ADMIN LOGIN MODAL -->
@@ -1269,6 +1428,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   <span>🔑 Admin Mode: <span id="adminEmail2"></span>
     <button class="btn-add-temple" onclick="openAddTemple()">➕ เพิ่มวัดใหม่</button>
     <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
+    <button class="btn-add-temple" style="background:#6A1B9A" onclick="openImport()">📤 Import Excel</button>
   </span>
   <button onclick="doLogout()">ออกจากระบบ</button>
 </div>
