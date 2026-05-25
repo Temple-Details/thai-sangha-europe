@@ -728,7 +728,7 @@ function openModal(idx){
     ]],
     ['สถานที่และทรัพย์สิน',[
       ['ที่อยู่',t.address],
-      ['แผนที่',t.address?`<a href="https://maps.google.com/?q=${encodeURIComponent(t.address)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;text-decoration:none;">📍 เปิด Google Maps</a>`:''],
+      ['แผนที่',t.address?`<a href="https://maps.google.com/?q=${encodeURIComponent((t.name_th||t.org_th||"")+" "+t.address)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;text-decoration:none;">📍 เปิด Google Maps</a>`:''],
       ['สถานะที่ดิน/อาคาร',t.land_status],
       ['อุโบสถ/พัทธสีมา',ubosotHtml],
     ]],
