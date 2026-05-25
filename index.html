@@ -837,12 +837,12 @@ document.querySelectorAll('.filter-tab').forEach(btn=>{
     document.querySelectorAll('.filter-tab').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     activeZone=btn.dataset.zone;
-    countryF='';cSel.value='';
+    countryF='';document.getElementById('countryFilter').value='';
     render();
   });
 });
 
-cSel.addEventListener('change',e=>{countryF=e.target.value;render();});
+document.getElementById('countryFilter').addEventListener('change',e=>{countryF=e.target.value;render();});
 
 document.getElementById('navToggle').addEventListener('click',()=>{
   document.getElementById('navLinks').classList.toggle('open');
