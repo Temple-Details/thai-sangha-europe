@@ -611,7 +611,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div class="page-head">
   <div class="page-head-inner">
     <h1>วัดสมาชิก สหภาพพระธรรมทูตไทยในทวีปยุโรป</h1>
-    <p>ทะเบียนวัดสมาชิก ส.ธ.ย. ทั้ง ๔ เขต ในทวีปยุโรป — อัพเดทปี พ.ศ. ๒๕๖๘</p>
+    <p>ทะเบียนวัดสมาชิก ส.ธ.ย. ทั้ง ๔ เขต ในทวีปยุโรป — อัพเดทปี พ.ศ. <span id="updateYearSpan">๒๕๖๘</span></p>
     <div class="stat-row">
       <div class="stat-pill">วัดสมาชิกทั้งหมด <strong>121 แห่ง</strong></div>
       <div class="stat-pill">แบ่งเป็น <strong>4 เขต</strong></div>
@@ -715,6 +715,39 @@ const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 let TEMPLES = [];
 let _adminUser = null;
 let _editFile = null;
+let _siteSettings = {};
+
+// ── Load site settings ────────────────────────────────────────
+async function loadSiteSettings() {
+  try {
+    const { data } = await _sb.from('site_settings').select('key,value');
+    if (data) {
+      data.forEach(r => { _siteSettings[r.key] = r.value; });
+      if (_siteSettings.update_year) {
+        document.getElementById('updateYearSpan').textContent = _siteSettings.update_year;
+      }
+    }
+  } catch(e) { /* ถ้า table ยังไม่มีก็ข้ามไป */ }
+}
+
+function openSiteSettings() {
+  document.getElementById('sUpdateYear').value = _siteSettings.update_year || '๒๕๖๘';
+  document.getElementById('siteSettingsErr').textContent = '';
+  document.getElementById('siteSettingsOverlay').classList.add('show');
+}
+function closeSiteSettings() {
+  document.getElementById('siteSettingsOverlay').classList.remove('show');
+}
+async function saveSiteSettings() {
+  const year = document.getElementById('sUpdateYear').value.trim();
+  if (!year) { document.getElementById('siteSettingsErr').textContent = 'กรุณาระบุปี'; return; }
+  const { error } = await _sb.from('site_settings').upsert({ key: 'update_year', value: year }, { onConflict: 'key' });
+  if (error) { document.getElementById('siteSettingsErr').textContent = 'บันทึกไม่สำเร็จ: ' + error.message; return; }
+  _siteSettings.update_year = year;
+  document.getElementById('updateYearSpan').textContent = year;
+  closeSiteSettings();
+  showToast('บันทึกปีเรียบร้อยแล้ว', 'success');
+}
 
 // ── Load temples from Supabase ────────────────────────────────
 async function loadTemples() {
@@ -1386,6 +1419,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     else showToast('✅ เข้าสู่ระบบอยู่แล้ว');
   }
   loadTemples();
+  loadSiteSettings();
 });
 </script>
 
@@ -1544,8 +1578,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     <button class="btn-add-temple" onclick="openAddTemple()">➕ เพิ่มวัดใหม่</button>
     <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
     <button class="btn-add-temple" style="background:#6A1B9A" onclick="openImport()">📤 Import Excel</button>
+    <button class="btn-add-temple" style="background:#E65100" onclick="openSiteSettings()">⚙️ ตั้งค่าเว็บ</button>
   </span>
   <button onclick="doLogout()">ออกจากระบบ</button>
+</div>
+
+<!-- SITE SETTINGS MODAL -->
+<div class="modal-overlay" id="siteSettingsOverlay">
+  <div class="modal-box" style="max-width:360px;">
+    <h3>⚙️ ตั้งค่าเว็บ</h3>
+    <div class="form-row">
+      <label>ปีที่อัพเดทข้อมูล (พ.ศ.)</label>
+      <input type="text" id="sUpdateYear" placeholder="เช่น ๒๕๖๘" style="font-size:1rem;">
+      <div style="font-size:0.75rem;color:var(--text3);margin-top:4px;">แสดงผลใต้หัวข้อหน้าวัดสมาชิก</div>
+    </div>
+    <div class="form-err" id="siteSettingsErr"></div>
+    <button class="btn-primary" onclick="saveSiteSettings()">💾 บันทึก</button>
+    <button class="btn-cancel" onclick="closeSiteSettings()">ยกเลิก</button>
+  </div>
 </div>
 
 </body>
