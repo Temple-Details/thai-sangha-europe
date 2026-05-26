@@ -1081,9 +1081,11 @@ function openEdit(id) {
   // แสดงปุ่มลบเฉพาะวัดที่มีอยู่แล้ว
   document.getElementById('deleteBtnWrap').innerHTML =
     `<button onclick="deleteTemple()" style="background:#fff;color:#c00;border:1px solid #ffcdd2;border-radius:6px;padding:9px 20px;font-size:0.88rem;cursor:pointer;width:100%;margin-top:12px;">🗑️ ลบวัดนี้ออกจากระบบ</button>`;
+  document.getElementById('adminEditOverlay').dataset.editing = 'true';
   document.getElementById('adminEditOverlay').classList.add('show');
 }
 function closeEdit() {
+  document.getElementById('adminEditOverlay').removeAttribute('data-editing');
   document.getElementById('adminEditOverlay').classList.remove('show');
   _editFile = null;
 }
@@ -1153,18 +1155,24 @@ function closeConfirm() {
 }
 
 // ── Admin Search ──────────────────────────────────────────────
+function _clearSearchDropdown() {
+  const d = document.getElementById('adminSearchDropdown');
+  if (d) d.remove();
+}
 function openAdminSearch() {
   document.getElementById('adminSearchBar').classList.add('show');
   document.getElementById('adminSearchInput').value = '';
+  _clearSearchDropdown();
   document.getElementById('adminSearchInput').focus();
 }
 function closeAdminSearch() {
+  _clearSearchDropdown();
   document.getElementById('adminSearchBar').classList.remove('show');
 }
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('adminSearchInput').addEventListener('input', e => {
     const q = e.target.value.trim().toLowerCase();
-    if (!q) return;
+    if (!q) { _clearSearchDropdown(); return; }
     const found = TEMPLES.filter(t =>
       (t.name_th||'').toLowerCase().includes(q) ||
       (t.name_en||'').toLowerCase().includes(q) ||
@@ -1174,16 +1182,17 @@ document.addEventListener('DOMContentLoaded', () => {
       closeAdminSearch();
       openEdit(found[0].id);
     } else if (found.length > 0 && found.length <= 5) {
-      // show quick list
       const list = found.map(t => `<div onclick="closeAdminSearch();openEdit('${t.id}')" style="padding:6px 12px;cursor:pointer;color:#fff;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.1);">${t.name_th||t.org_th}</div>`).join('');
       let dropdown = document.getElementById('adminSearchDropdown');
       if (!dropdown) {
         dropdown = document.createElement('div');
         dropdown.id = 'adminSearchDropdown';
-        dropdown.style.cssText = 'position:absolute;top:100%;left:16px;background:var(--red-dark);border-radius:0 0 8px 8px;min-width:200px;z-index:502;';
+        dropdown.style.cssText = 'position:absolute;top:100%;left:16px;right:16px;background:var(--red-dark);border-radius:0 0 8px 8px;z-index:502;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
         document.getElementById('adminSearchBar').appendChild(dropdown);
       }
       dropdown.innerHTML = list;
+    } else {
+      _clearSearchDropdown();
     }
   });
 });
@@ -1224,25 +1233,33 @@ async function deleteTemple() {
 }
 
 // ── Add New Temple ────────────────────────────────────────────
+function _regenAddId() {
+  // Bug 3 fix: อ่าน zone จาก eZone แทนค่าตายตัว
+  const year = new Date().getFullYear() + 543;
+  const zone = document.getElementById('eZone').value || 1;
+  const num = String(TEMPLES.length + 1).padStart(3, '0');
+  document.getElementById('editId').value = `${year}.${zone}.${num}`;
+  // Bug 2 fix: sync eZoneNum ทุกครั้งที่ eZone เปลี่ยน
+  document.getElementById('eZoneNum').value = zone;
+}
+
 function openAddTemple() {
-  // Clear all fields
-  ['editId','eName_th','eName_en','eAbbot','ePresident','eAddress',
-   'ePhone','eEmail','eWebsite','eRegDate'].forEach(id => {
+  // Bug 1 fix: ล้างทุก field รวม eOrg_th / eOrg_en ที่หายไปก่อนหน้า
+  ['editId','eName_th','eName_en','eOrg_th','eOrg_en',
+   'eAbbot','ePresident','eAddress','ePhone','eEmail',
+   'eWebsite','eRegDate'].forEach(id => {
     document.getElementById(id).value = '';
   });
-  ['eMonks','eLandStatus','eUbosot','eZone','eCountry'].forEach(id => {
+  ['eMonks','eLandStatus','eUbosot','eCountry'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  document.getElementById('eZone').value = '1';
   document.getElementById('editTitle').textContent = '➕ เพิ่มวัดใหม่';
   document.getElementById('logoPreviewWrap').innerHTML = `<div class="logo-preview-ph">${templeIcon(36)}</div>`;
   document.getElementById('editErr').textContent = '';
-  document.getElementById('deleteBtnWrap').innerHTML = ''; // ซ่อนปุ่มลบตอนเพิ่มใหม่
+  document.getElementById('deleteBtnWrap').innerHTML = '';
   _editFile = null;
-  // Generate new ID
-  const year = new Date().getFullYear() + 543;
-  const zone = 1;
-  const num = String(TEMPLES.length + 1).padStart(3, '0');
-  document.getElementById('editId').value = `${year}.${zone}.${num}`;
+  _regenAddId();
   document.getElementById('adminEditOverlay').classList.add('show');
 }
 
@@ -1700,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="form-row">
         <label>เขต ส.ธ.ย.</label>
-        <select id="eZone">
+        <select id="eZone" onchange="document.getElementById('eZoneNum').value=this.value; if(!document.getElementById('adminEditOverlay').dataset.editing) _regenAddId();">
           <option value="1">เขต ๑</option>
           <option value="2">เขต ๒</option>
           <option value="3">เขต ๓</option>
@@ -1734,11 +1751,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="form-row">
         <label>มีอุโบสถ</label>
-        <select id="eUbosot">
-          <option value="">-- เลือก --</option>
-          <option value="มี">มี</option>
-          <option value="ไม่มี">ไม่มี</option>
-        </select>
+        <input type="text" id="eUbosot" list="ubosotOptions" placeholder="มี / ไม่มี / กำลังก่อสร้าง">
+        <datalist id="ubosotOptions">
+          <option value="มี">
+          <option value="ไม่มี">
+          <option value="กำลังก่อสร้าง">
+        </datalist>
       </div>
     </div>
 
@@ -1805,9 +1823,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 <!-- SITE SETTINGS MODAL -->
 <div class="modal-overlay" id="siteSettingsOverlay">
   <div class="modal-box">
-    <h3>⚙️ ตั้งค่าเว็บไซต์</h3>
+    <h3>&#9881;&#65039; ตั้งค่าเว็บไซต์</h3>
 
-    <!-- โลโก้องค์กร -->
     <div class="form-row" style="margin-bottom:18px;">
       <label style="display:block;font-weight:600;margin-bottom:8px;">โลโก้องค์กร</label>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
@@ -1818,16 +1835,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="upload-area"
         onclick="document.getElementById('sLogoFile').click()"
         style="padding:14px;text-align:center;cursor:pointer;">
-        📷 คลิกเพื่อเลือกโลโก้ใหม่
+        &#128247; คลิกเพื่อเลือกโลโก้ใหม่
       </div>
       <input type="file" id="sLogoFile" accept="image/*" style="display:none" onchange="previewSiteLogo(this)">
-      <div style="font-size:0.75rem;color:var(--text3);margin-top:5px;">รองรับ JPG, PNG, WebP — แนะนำ 200×200px ขึ้นไป</div>
+      <div style="font-size:0.75rem;color:var(--text3);margin-top:5px;">รองรับ JPG, PNG, WebP แนะนำ 200x200px</div>
     </div>
 
-    <!-- ปีอัพเดท -->
     <div class="form-row" style="margin-bottom:18px;">
       <label style="display:block;font-weight:600;margin-bottom:6px;">ปี พ.ศ. ที่แสดงในหัวเว็บ</label>
-      <input id="sUpdateYear" type="text" placeholder="เช่น ๒๕๖๘"
+      <input id="sUpdateYear" type="text" placeholder="เช่น 2568"
         style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;">
       <div style="font-size:0.75rem;color:var(--text3);margin-top:4px;">ใช้เลขไทยหรืออารบิกก็ได้</div>
     </div>
@@ -1840,7 +1856,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         ยกเลิก
       </button>
       <button onclick="saveSiteSettings()"
-                style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">
+        style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">
         บันทึก
       </button>
     </div>
