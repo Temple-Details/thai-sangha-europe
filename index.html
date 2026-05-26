@@ -653,6 +653,20 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   ส.ธ.ย. แบ่งโครงสร้างการบริหารออกเป็น ๔ เขต ครอบคลุมหลายประเทศในทวีปยุโรป
 </div>
 
+<!-- ADMIN BAR (แสดงเมื่อ login) -->
+<div class="admin-bar" id="adminBar" style="display:none;">
+  <div class="admin-bar-top">
+    <span>🔑 <span id="adminEmail2"></span></span>
+    <button onclick="doLogout()">ออกจากระบบ</button>
+  </div>
+  <div class="admin-bar-btns">
+    <button class="btn-add-temple" onclick="openAddTemple()">➕ เพิ่มวัดใหม่</button>
+    <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
+    <button class="btn-add-temple" style="background:#6A1B9A" onclick="openImport()">📤 Import Excel</button>
+    <button class="btn-add-temple" style="background:#E65100" onclick="openSiteSettings()">⚙️ ตั้งค่าเว็บ</button>
+  </div>
+</div>
+
 <!-- MAIN -->
 <main class="main">
   <div class="grid" id="grid"></div>
