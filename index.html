@@ -1380,20 +1380,78 @@ function resetImport() {
   _importData = [];
 }
 
+function handleImportDrop(event) {
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  if (!file.name.match(/\.(xlsx|xls)$/i)) {
+    document.getElementById('importErr').textContent = 'กรุณาลากไฟล์ .xlsx หรือ .xls เท่านั้น';
+    return;
+  }
+  // สร้าง fake input object แล้วส่งเข้า previewImport
+  previewImportFile(file);
+}
+
 function previewImport(input) {
-  const file = input.files[0];
+  previewImportFile(input.files[0]);
+}
+
+// แผนที่ชื่อคอลัมน์ภาษาไทย → ชื่อ field ในระบบ
+const THAI_COL_MAP = {
+  'No สมาชิกที่': 'id',
+  'เขต สธย.': 'zone_num',
+  'ชื่อองค์กร (ภาษาไทย)': 'org_th',
+  'ชื่อองค์กร (ภาษาอังกฤษ)': 'org_en',
+  'ประเทศ': 'country',
+  'ชื่อวัด (ภาษาไทย)': 'name_th',
+  'ชื่อวัด (ภาษาอังกฤษ)': 'name_en',
+  'ที่อยู่วัด': 'address',
+  'โทรศัพท์': 'phone',
+  'อีเมล์': 'email',
+  'เว็บไซต์ และสื่อออนไลน์อื่นๆ': 'website',
+  'ชื่อประธานสมาคม (ภาษาไทย)': 'president',
+  'ชื่อเจ้าอาวาส (ภาษาไทย)': 'abbot',
+  'ที่ดินและอาคารที่วัดปัจจุบัน': 'land_status',
+  'วัดหรืออาคาร มี/ไม่มี อุโบสถ ': 'ubosot',
+  'จำนวนพระในพรรษา(โดยปกติ)': 'monks',
+  'วันที่ศาลอนุมัติ': 'reg_date',
+};
+
+function previewImportFile(file) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      // อ่านแบบ raw array ก่อน เพื่อตรวจว่า row 1 เป็น title หรือเปล่า
+      let raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
       if (!raw.length) { document.getElementById('importErr').textContent = 'ไฟล์ว่างเปล่า'; return; }
-      // Map headers
+
+      // ถ้า row แรกไม่มีคอลัมน์ที่รู้จัก → อาจเป็น title row ให้ข้ามและอ่านใหม่จาก row 2
+      const firstKeys = Object.keys(raw[0]);
+      const hasId = firstKeys.includes('id') || firstKeys.includes('No สมาชิกที่');
+      if (!hasId) {
+        raw = XLSX.utils.sheet_to_json(ws, { defval: '', range: 1 }); // เริ่มอ่านจาก row 2
+      }
+      if (!raw.length) { document.getElementById('importErr').textContent = 'ไฟล์ว่างเปล่า'; return; }
+
+      // แปลงชื่อคอลัมน์ภาษาไทย → ชื่อ field ถ้าจำเป็น
+      const sampleKeys = Object.keys(raw[0]);
+      const isThaiCols = sampleKeys.includes('No สมาชิกที่');
+      if (isThaiCols) {
+        raw = raw.map(row => {
+          const mapped = {};
+          Object.entries(row).forEach(([k, v]) => {
+            const field = THAI_COL_MAP[k] || k;
+            mapped[field] = v;
+          });
+          return mapped;
+        });
+      }
+
       const firstRow = raw[0];
       const keys = Object.keys(firstRow);
-      if (!keys.includes('id')) { document.getElementById('importErr').textContent = 'ไม่พบคอลัมน์ "id" — กรุณาใช้ template ที่ถูกต้อง'; return; }
+      if (!keys.includes('id')) { document.getElementById('importErr').textContent = 'ไม่พบคอลัมน์ "id" หรือ "No สมาชิกที่" — กรุณาตรวจสอบไฟล์'; return; }
       _importData = raw.map(row => {
         const obj = {};
         IMPORT_COLS.forEach(col => { if (row[col] !== undefined) obj[col] = String(row[col]).trim(); });
@@ -1505,8 +1563,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     <div id="importStep1">
       <p style="font-size:0.85rem;color:var(--text2);margin-bottom:12px;">ไฟล์ Excel ต้องมีคอลัมน์ตรงกับ template — ถ้า id ซ้ำจะอัปเดตทับข้อมูลเดิม</p>
       <button onclick="downloadTemplate()" style="display:inline-flex;align-items:center;gap:5px;background:#1565C0;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:0.82rem;cursor:pointer;margin-bottom:14px;">📋 ดาวน์โหลด Template</button>
-      <div class="upload-area" onclick="document.getElementById('importFile').click()" style="margin-bottom:12px;">
-        📂 คลิกเพื่อเลือกไฟล์ Excel (.xlsx)
+      <div class="upload-area" id="importDropZone"
+        onclick="document.getElementById('importFile').click()"
+        ondragover="event.preventDefault();this.style.borderColor='var(--gold)';this.style.background='#fffbf0';"
+        ondragleave="this.style.borderColor='';this.style.background='';"
+        ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';handleImportDrop(event);"
+        style="margin-bottom:12px;padding:28px 16px;">
+        📂 คลิกเพื่อเลือก หรือ <strong>ลากไฟล์ Excel มาวางตรงนี้</strong>
       </div>
       <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="previewImport(this)">
     </div>
