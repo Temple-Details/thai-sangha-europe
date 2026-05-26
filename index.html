@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>วัดสมาชิก ส.ธ.ย. — สหภาพพระธรรมทูตไทยในทวีปยุโรป</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -459,6 +459,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 
 /* ── ADMIN BADGE ── */
 .admin-bar{position:fixed;bottom:0;left:0;right:0;background:var(--red-dark);color:#fff;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;font-size:0.82rem;z-index:500;box-shadow:0 -2px 8px rgba(0,0,0,0.3);}
+/* รองรับ safe-area iPhone (home indicator) */
+.admin-bar{padding-bottom:calc(8px + env(safe-area-inset-bottom));}
 .admin-bar button{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:0.8rem;}
 .admin-bar button:hover{background:rgba(255,255,255,0.25);}
 
@@ -467,9 +469,23 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .btn-edit:hover{background:#b8832a;}
 
 /* ── MODALS OVERLAY SHARED ── */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:400;align-items:center;justify-content:center;}
+/* z-index:600 สูงกว่า admin-bar(500) ให้ modal ลอยทับได้ */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:600;align-items:flex-end;justify-content:center;}
 .modal-overlay.show{display:flex;}
-.modal-box{background:#fff;border-radius:12px;padding:28px 24px;width:min(480px,92vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.2);}
+/* บน mobile ให้ modal เกาะด้านล่าง เลื่อน scroll ขึ้นแทน */
+.modal-box{
+  background:#fff;border-radius:12px 12px 0 0;
+  padding:24px 20px;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  width:100%;max-width:520px;
+  max-height:88vh;overflow-y:auto;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.18);
+}
+/* desktop: กลับไปลอยกลาง */
+@media(min-width:600px){
+  .modal-overlay{align-items:center;}
+  .modal-box{border-radius:12px;padding:28px 24px;width:min(480px,92vw);max-height:85vh;}
+}
 .modal-box h3{font-size:1.1rem;font-weight:700;margin-bottom:18px;color:var(--red);}
 .form-row{margin-bottom:14px;}
 .form-row label{display:block;font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:4px;}
