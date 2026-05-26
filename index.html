@@ -1014,16 +1014,18 @@ async function doLogout() {
   _adminUser = null;
   clearTimeout(_inactiveTimer);
   _inactiveTimer = null;
-  document.getElementById('adminBar').style.display = 'none';
+  const bar = document.getElementById('adminBar');
+  if (bar) bar.style.display = 'none';
   const mainEl = document.querySelector('.main') || document.querySelector('main') || document.body;
   if (mainEl) mainEl.style.paddingBottom = '';
   showToast('ออกจากระบบแล้ว', 'success');
   render();
 }
 function showAdminBar() {
-  document.getElementById('adminBar').style.display = 'flex';
-  document.getElementById('adminEmail2').textContent = _adminUser?.email || '';
-  // เพิ่ม padding-bottom ให้เนื้อหาไม่โดน admin bar บัง
+  const bar = document.getElementById('adminBar');
+  if (bar) bar.style.display = 'flex';
+  const emailEl = document.getElementById('adminEmail2');
+  if (emailEl) emailEl.textContent = _adminUser?.email || '';
   const mainEl = document.querySelector('.main') || document.querySelector('main') || document.body;
   if (mainEl) mainEl.style.paddingBottom = '90px';
   resetInactiveTimer();
@@ -1561,7 +1563,8 @@ function resetInactiveTimer() {
   _inactiveTimer = setTimeout(async () => {
     await _sb.auth.signOut();
     _adminUser = null;
-    document.getElementById('adminBar').style.display = 'none';
+    const bar = document.getElementById('adminBar');
+    if (bar) bar.style.display = 'none';
     render();
     alert('⏰ หมดเวลา 30 นาที — กรุณา Login ใหม่');
   }, INACTIVE_LIMIT);
