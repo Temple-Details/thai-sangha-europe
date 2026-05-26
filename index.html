@@ -693,13 +693,20 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
       <a href="https://www.utse.info/others/calendar" target="_blank">ปฏิทินวันพระและวันหยุด</a>
     </div>
   </div>
-  <div class="footer-bottom">
+  <div class="footer-bottom" style="position:relative;">
     <p>Copyright © 2026 utse.info · สงวนลิขสิทธิ์</p>
     <div class="social-links">
       <a href="mailto:utse2003@gmail.com" title="Email">📧</a>
       <a href="https://www.facebook.com/สหภาพพระธรรมทูตไทยในทวีปยุโรป-772744446171296" target="_blank" title="Facebook">📘</a>
       <a href="https://www.youtube.com/@utse1607" target="_blank" title="YouTube">📺</a>
     </div>
+    <!-- ปุ่ม admin ซ่อนมุมขวาล่าง -->
+    <button onclick="openAdminLogin()" aria-label="Admin login"
+      style="position:absolute;bottom:0;right:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.06);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 0.2s;"
+      onmouseover="this.style.background='rgba(255,255,255,0.18)'"
+      onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+      🔒
+    </button>
   </div>
 </footer>
 <!-- admin trigger -->
