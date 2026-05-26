@@ -489,7 +489,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .modal-box h3{font-size:1.1rem;font-weight:700;margin-bottom:18px;color:var(--red);}
 .form-row{margin-bottom:14px;}
 .form-row label{display:block;font-size:0.8rem;font-weight:600;color:var(--text2);margin-bottom:4px;}
-.form-row input,.form-row textarea,.form-row select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.85rem;font-family:'Sarabun',sans-serif;}
+.form-row input,.form-row textarea,.form-row select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:1rem;font-family:'Sarabun',sans-serif;}
+/* font-size >=16px ป้องกัน iOS zoom เวลากดพิมพ์ */
 .form-row textarea{resize:vertical;min-height:64px;}
 .btn-primary{background:var(--red);color:#fff;border:none;border-radius:6px;padding:9px 20px;font-size:0.88rem;font-weight:600;cursor:pointer;width:100%;}
 .btn-primary:hover{background:var(--red-hover);}
@@ -613,9 +614,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <h1>วัดสมาชิก สหภาพพระธรรมทูตไทยในทวีปยุโรป</h1>
     <p>ทะเบียนวัดสมาชิก ส.ธ.ย. ทั้ง ๔ เขต ในทวีปยุโรป — อัพเดทปี พ.ศ. <span id="updateYearSpan">๒๕๖๘</span></p>
     <div class="stat-row">
-      <div class="stat-pill">วัดสมาชิกทั้งหมด <strong>121 แห่ง</strong></div>
+      <div class="stat-pill">วัดสมาชิกทั้งหมด <strong id="statTotal">—</strong></div>
       <div class="stat-pill">แบ่งเป็น <strong>4 เขต</strong></div>
-      <div class="stat-pill">ครอบคลุม <strong>16 ประเทศ</strong></div>
+      <div class="stat-pill">ครอบคลุม <strong id="statCountries">—</strong></div>
     </div>
   </div>
 </div>
@@ -768,8 +769,10 @@ async function loadTemples() {
   const { data, error } = await _sb.from('temples').select('*').order('zone_num').order('id');
   if (error) { console.error(error); return; }
   TEMPLES = data;
-  // Populate country filter
+  // อัปเดตสถิติจากข้อมูลจริง
+  document.getElementById('statTotal').textContent = TEMPLES.length + ' แห่ง';
   const countries=[...new Set(TEMPLES.map(t=>t.country).filter(Boolean))].sort();
+  document.getElementById('statCountries').textContent = countries.length + ' ประเทศ';
   const cSel=document.getElementById('countryFilter');
   cSel.innerHTML='<option value="">ทุกประเทศ</option>';
   countries.forEach(c=>{
