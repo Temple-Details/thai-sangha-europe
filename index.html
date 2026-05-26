@@ -644,7 +644,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <div class="f-divider"></div>
     <select class="country-sel" id="countryFilter"><option value="">🌍 ทุกประเทศ</option></select>
     <span class="result-info" id="resultInfo"></span>
-    <button id="exportBtn" onclick="exportExcel()" style="display:none;align-items:center;gap:5px;background:#1B5E20;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:0.78rem;font-weight:600;cursor:pointer;margin-left:8px;">📥 Export Excel</button>
   </div>
 </div>
 
@@ -663,6 +662,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <button class="btn-add-temple" onclick="openAddTemple()">➕ เพิ่มวัดใหม่</button>
     <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
     <button class="btn-add-temple" style="background:#6A1B9A" onclick="openImport()">📤 Import Excel</button>
+    <button id="exportBtn" class="btn-add-temple" style="background:#1B5E20" onclick="exportExcel()">📥 Export Excel</button>
     <button class="btn-add-temple" style="background:#E65100" onclick="openSiteSettings()">⚙️ ตั้งค่าเว็บ</button>
   </div>
 </div>
@@ -876,8 +876,6 @@ function filtered(){
 function render(){
   const list=filtered();
   document.getElementById('resultInfo').textContent=`${list.length} จาก ${TEMPLES.length} วัด`;
-  const exportBtn=document.getElementById('exportBtn');
-  if(exportBtn) exportBtn.style.display=list.length>0?'inline-flex':'none';
 
   const zm=ZONE_META[activeZone];
   const zinfo=document.getElementById('zoneInfo');
@@ -1628,6 +1626,182 @@ document.addEventListener('DOMContentLoaded', async () => {
 </div>
 
 
+<!-- ADMIN LOGIN MODAL -->
+<div class="modal-overlay" id="adminLoginOverlay">
+  <div class="modal-box">
+    <h3>🔑 เข้าสู่ระบบแอดมิน</h3>
+    <div class="form-row">
+      <label>อีเมล</label>
+      <input type="email" id="adminEmail" placeholder="admin@example.com" autocomplete="username">
+    </div>
+    <div class="form-row">
+      <label>รหัสผ่าน</label>
+      <input type="password" id="adminPass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="loginErr" class="form-err"></div>
+    <button class="btn-primary" onclick="doLogin()" style="margin-top:8px;">เข้าสู่ระบบ</button>
+    <button class="btn-cancel" onclick="closeAdminLogin()">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- ADMIN EDIT / ADD TEMPLE MODAL -->
+<div class="modal-overlay" id="adminEditOverlay">
+  <div class="modal-box">
+    <h3 id="editTitle">✏️ แก้ไขข้อมูลวัด</h3>
+    <input type="hidden" id="editId">
+
+    <!-- โลโก้ -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px;">
+      <div id="logoPreviewWrap"><div class="logo-preview-ph">🛕</div></div>
+      <div class="upload-area" style="width:100%;margin-top:6px;"
+        onclick="document.getElementById('eLogoFile').click()">
+        📷 คลิกเพื่อเปลี่ยนโลโก้วัด
+      </div>
+      <input type="file" id="eLogoFile" accept="image/*" style="display:none" onchange="previewLogo(this)">
+      <button id="removeLogo" onclick="removeLogo()"
+        style="margin-top:6px;background:none;border:none;color:#c00;font-size:0.8rem;cursor:pointer;">
+        🗑️ ลบรูปโลโก้
+      </button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px;">
+      <div class="form-row" style="grid-column:1/-1;">
+        <label>ชื่อวัด (ภาษาไทย)</label>
+        <input type="text" id="eName_th" placeholder="วัด...">
+      </div>
+      <div class="form-row" style="grid-column:1/-1;">
+        <label>ชื่อวัด (ภาษาอังกฤษ)</label>
+        <input type="text" id="eName_en" placeholder="Wat...">
+      </div>
+      <div class="form-row" style="grid-column:1/-1;">
+        <label>ชื่อองค์กร (ภาษาไทย)</label>
+        <input type="text" id="eOrg_th">
+      </div>
+      <div class="form-row" style="grid-column:1/-1;">
+        <label>ชื่อองค์กร (ภาษาอังกฤษ)</label>
+        <input type="text" id="eOrg_en">
+      </div>
+      <div class="form-row">
+        <label>เจ้าอาวาส</label>
+        <input type="text" id="eAbbot">
+      </div>
+      <div class="form-row">
+        <label>ประธาน</label>
+        <input type="text" id="ePresident">
+      </div>
+      <div class="form-row" style="grid-column:1/-1;">
+        <label>ที่อยู่วัด</label>
+        <textarea id="eAddress" rows="2"></textarea>
+      </div>
+      <div class="form-row">
+        <label>ประเทศ</label>
+        <input type="text" id="eCountry" placeholder="เยอรมนี">
+      </div>
+      <div class="form-row">
+        <label>เขต ส.ธ.ย.</label>
+        <select id="eZone">
+          <option value="1">เขต ๑</option>
+          <option value="2">เขต ๒</option>
+          <option value="3">เขต ๓</option>
+          <option value="4">เขต ๔</option>
+        </select>
+      </div>
+      <input type="hidden" id="eZoneNum">
+      <div class="form-row">
+        <label>โทรศัพท์</label>
+        <input type="text" id="ePhone">
+      </div>
+      <div class="form-row">
+        <label>อีเมล</label>
+        <input type="email" id="eEmail">
+      </div>
+      <div class="form-row" style="grid-column:1/-1;">
+        <label>เว็บไซต์ / โซเชียล</label>
+        <input type="text" id="eWebsite" placeholder="https://...">
+      </div>
+      <div class="form-row">
+        <label>จำนวนพระในพรรษา</label>
+        <input type="text" id="eMonks">
+      </div>
+      <div class="form-row">
+        <label>วันที่ศาลอนุมัติ</label>
+        <input type="text" id="eRegDate" placeholder="ว/ด/ปปปป">
+      </div>
+      <div class="form-row">
+        <label>สถานะที่ดิน</label>
+        <input type="text" id="eLandStatus">
+      </div>
+      <div class="form-row">
+        <label>มีอุโบสถ</label>
+        <select id="eUbosot">
+          <option value="">-- เลือก --</option>
+          <option value="มี">มี</option>
+          <option value="ไม่มี">ไม่มี</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="editErr" class="form-err"></div>
+    <div id="deleteBtnWrap"></div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn-cancel" style="margin-top:0;" onclick="closeEdit()">ยกเลิก</button>
+      <button class="btn-primary" style="margin-top:0;" onclick="saveEdit()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT EXCEL MODAL -->
+<div class="modal-overlay" id="importOverlay">
+  <div class="modal-box">
+    <h3>📤 Import Excel</h3>
+
+    <!-- Step 1: เลือกไฟล์ -->
+    <div id="importStep1">
+      <div class="upload-area"
+        ondragover="event.preventDefault()"
+        ondrop="handleImportDrop(event)"
+        onclick="document.getElementById('importFile').click()"
+        style="padding:28px;margin-bottom:14px;">
+        📂 ลากไฟล์มาวาง หรือคลิกเพื่อเลือก<br>
+        <span style="font-size:0.78rem;color:var(--text3);">รองรับ .xlsx และ .xls</span>
+      </div>
+      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none"
+        onchange="previewImport(this)">
+      <button onclick="downloadTemplate()"
+        style="width:100%;padding:9px;border:1px solid var(--border);border-radius:6px;
+               background:#fff;cursor:pointer;font-size:0.85rem;color:var(--text2);">
+        ⬇️ ดาวน์โหลด Template
+      </button>
+    </div>
+
+    <!-- Step 2: Preview ก่อน import -->
+    <div id="importStep2" style="display:none;">
+      <div id="importSummary" style="margin-bottom:12px;font-size:0.87rem;padding:10px 12px;
+           background:var(--gold-light);border-radius:8px;"></div>
+      <div style="overflow-x:auto;margin-bottom:12px;max-height:240px;overflow-y:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+          <thead><tr id="importPreviewHead" style="background:var(--gold-light);"></tr></thead>
+          <tbody id="importPreviewBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="resetImport()"
+          style="flex:1;padding:9px;border:1px solid var(--border);border-radius:6px;
+                 background:#fff;cursor:pointer;font-size:0.88rem;">
+          ← เลือกไฟล์ใหม่
+        </button>
+        <button onclick="doImport()" class="btn-primary" style="flex:1;margin:0;">
+          ✅ นำเข้าข้อมูล
+        </button>
+      </div>
+    </div>
+
+    <div id="importErr" class="form-err" style="margin-top:8px;"></div>
+    <button class="btn-cancel" onclick="closeImport()">ปิด</button>
+  </div>
+</div>
+
 <!-- SITE SETTINGS MODAL -->
 <div class="modal-overlay" id="siteSettingsOverlay">
   <div class="modal-box">
@@ -1666,102 +1840,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         ยกเลิก
       </button>
       <button onclick="saveSiteSettings()"
-        style="flex:2;padding:10px;border:none;border-radius:8px;background:var(--green);color:#fff;cursor:pointer;font-size:0.9rem;font-weight:600;">
-        💾 บันทึกการตั้งค่า
+                style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">
+        บันทึก
       </button>
     </div>
   </div>
 </div>
 
-<!-- IMPORT MODAL -->
-<div class="modal-overlay" id="importOverlay">
-  <div class="modal-box" style="width:min(600px,95vw);">
-    <h3>📤 Import ข้อมูลวัดจาก Excel</h3>
-    <div id="importStep1">
-      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:12px;">ไฟล์ Excel ต้องมีคอลัมน์ตรงกับ template — ถ้า id ซ้ำจะอัปเดตทับข้อมูลเดิม</p>
-      <button onclick="downloadTemplate()" style="display:inline-flex;align-items:center;gap:5px;background:#1565C0;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:0.82rem;cursor:pointer;margin-bottom:14px;">📋 ดาวน์โหลด Template</button>
-      <div class="upload-area" id="importDropZone"
-        onclick="document.getElementById('importFile').click()"
-        ondragover="event.preventDefault();this.style.borderColor='var(--gold)';this.style.background='#fffbf0';"
-        ondragleave="this.style.borderColor='';this.style.background='';"
-        ondrop="event.preventDefault();this.style.borderColor='';this.style.background='';handleImportDrop(event);"
-        style="margin-bottom:12px;padding:28px 16px;">
-        📂 คลิกเพื่อเลือก หรือ <strong>ลากไฟล์ Excel มาวางตรงนี้</strong>
-      </div>
-      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="previewImport(this)">
-    </div>
-    <div id="importStep2" style="display:none;">
-      <div style="font-size:0.85rem;color:var(--text2);margin-bottom:10px;" id="importSummary"></div>
-      <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;margin-bottom:14px;">
-        <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
-          <thead style="background:var(--bg);position:sticky;top:0;">
-            <tr id="importPreviewHead"></tr>
-          </thead>
-          <tbody id="importPreviewBody"></tbody>
-        </table>
-      </div>
-      <button onclick="doImport()" class="btn-primary">✅ ยืนยัน Import</button>
-      <button onclick="resetImport()" class="btn-cancel">↩ เลือกไฟล์ใหม่</button>
-    </div>
-    <div class="form-err" id="importErr"></div>
-    <button class="btn-cancel" onclick="closeImport()" style="margin-top:8px;">ปิด</button>
-  </div>
-</div>
-
-<!-- ADMIN LOGIN MODAL -->
-<div class="modal-overlay" id="adminLoginOverlay">
-  <div class="modal-box">
-    <h3>🔐 Admin Login</h3>
-    <div class="form-row">
-      <label>Email</label>
-      <input type="email" id="adminEmail" placeholder="admin@example.com">
-    </div>
-    <div class="form-row">
-      <label>Password</label>
-      <input type="password" id="adminPass" placeholder="••••••••">
-    </div>
-    <div class="form-err" id="loginErr"></div>
-    <button class="btn-primary" onclick="doLogin()">เข้าสู่ระบบ</button>
-    <button class="btn-cancel" onclick="closeAdminLogin()">ยกเลิก</button>
-  </div>
-</div>
-
-<!-- ADMIN EDIT MODAL -->
-<div class="modal-overlay" id="adminEditOverlay">
-  <div class="modal-box">
-    <h3 id="editTitle">✏️ แก้ไขข้อมูลวัด</h3>
-    <input type="hidden" id="editId">
-    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px;">
-      <div id="logoPreviewWrap"></div>
-      <div style="display:flex;gap:8px;width:100%;margin-top:8px;">
-        <div class="upload-area" onclick="document.getElementById('logoFile').click()" style="flex:1;">
-          📷 เลือกรูปโลโก้
-        </div>
-        <button onclick="removeLogo()" style="background:#ffebee;color:#c00;border:1px solid #ffcdd2;border-radius:8px;padding:0 12px;cursor:pointer;font-size:0.8rem;white-space:nowrap;">🗑️ ลบรูป</button>
-      </div>
-      <input type="file" id="logoFile" accept="image/*" style="display:none" onchange="previewLogo(this)">
-      <div style="font-size:0.75rem;color:var(--text3);margin-top:4px;">ระบบจะ resize เป็น 1000×1000px อัตโนมัติ</div>
-    </div>
-    <div class="form-row"><label>ชื่อวัด (ภาษาไทย)</label><input type="text" id="eName_th"></div>
-    <div class="form-row"><label>ชื่อวัด (ภาษาอังกฤษ)</label><input type="text" id="eName_en"></div>
-    <div class="form-row"><label>เจ้าอาวาส</label><input type="text" id="eAbbot"></div>
-    <div class="form-row"><label>ประธาน</label><input type="text" id="ePresident"></div>
-    <div class="form-row"><label>ที่อยู่</label><textarea id="eAddress"></textarea></div>
-    <div class="form-row"><label>โทรศัพท์</label><input type="text" id="ePhone"></div>
-    <div class="form-row"><label>อีเมล</label><input type="email" id="eEmail"></div>
-    <div class="form-row"><label>เว็บไซต์/โซเชียล</label><textarea id="eWebsite"></textarea></div>
-    <div class="form-row"><label>พระในพรรษา</label>
-      <select id="eMonks">
-        <option value="">-- เลือก --</option>
-        <option value="๑ รูป">๑ รูป</option>
-        <option value="๒-๓ รูป">๒-๓ รูป</option>
-        <option value="๔-๕ รูป">๔-๕ รูป</option>
-        <option value="๖-๑๐ รูป">๖-๑๐ รูป</option>
-        <option value="๑๐ รูปขึ้นไป">๑๐ รูปขึ้นไป</option>
-      </select>
-    </div>
-    <div class="form-row"><label>สถานะที่ดิน/อาคาร</label>
-      <select id="eLandStatus">
-        <option value="">-- เลือก --</option>
-        <option value="เจ้าของ(หมดหนี้สินแล้ว)">เจ้าของ (หมดหนี้สินแล้ว)</option>
-        <option value="เจ้าของ/กำลังผ่อนชำระ">เจ้าของ / กำลังผ่
+</body>
+</html>
