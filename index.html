@@ -547,7 +547,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <nav class="navbar">
   <div class="nav-inner">
     <a class="nav-logo" href="https://www.utse.info/Home" target="_blank">
-      <img id="siteLogoImg" src="logo.png" alt="ส.ธ.ย. Logo" style="width:48px;height:48px;flex-shrink:0;object-fit:contain;filter:drop-shadow(0 0 2px rgba(255,255,255,0.3));"/>
+      <img id="siteLogoImg" src="logo.png" alt="ส.ธ.ย. Logo" style="width:48px;height:48px;flex-shrink:0;object-fit:contain;filter:drop-shadow(0 0 2px rgba(255,255,255,0.3));" onerror="this.style.display='none'"/>
       <div class="nav-logo-text">
         <span class="nav-logo-th">สหภาพพระธรรมทูตไทยในทวีปยุโรป</span>
         <span class="nav-logo-en">The Union of Thai Sanghas in Europe (UTSE.)</span>
@@ -1015,7 +1015,8 @@ async function doLogout() {
   clearTimeout(_inactiveTimer);
   _inactiveTimer = null;
   document.getElementById('adminBar').style.display = 'none';
-  document.querySelector('.main').style.paddingBottom = '';
+  const mainEl = document.querySelector('.main') || document.querySelector('main') || document.body;
+  if (mainEl) mainEl.style.paddingBottom = '';
   showToast('ออกจากระบบแล้ว', 'success');
   render();
 }
@@ -1023,7 +1024,8 @@ function showAdminBar() {
   document.getElementById('adminBar').style.display = 'flex';
   document.getElementById('adminEmail2').textContent = _adminUser?.email || '';
   // เพิ่ม padding-bottom ให้เนื้อหาไม่โดน admin bar บัง
-  document.querySelector('.main').style.paddingBottom = '90px';
+  const mainEl = document.querySelector('.main') || document.querySelector('main') || document.body;
+  if (mainEl) mainEl.style.paddingBottom = '90px';
   resetInactiveTimer();
 }
 function openAdminLogin() {
