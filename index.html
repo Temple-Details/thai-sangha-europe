@@ -752,7 +752,7 @@ async function saveSiteSettings() {
 // ── Load temples from Supabase ────────────────────────────────
 async function loadTemples() {
   document.getElementById('grid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">⏳ กำลังโหลดข้อมูล...</div>';
-  const { data, error } = await _sb.from('temples').select('*').order('id');
+  const { data, error } = await _sb.from('temples').select('*').order('zone_num').order('id');
   if (error) { console.error(error); return; }
   TEMPLES = data;
   // Populate country filter
