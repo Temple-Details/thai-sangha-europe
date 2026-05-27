@@ -707,6 +707,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
       <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
       <button class="btn-add-temple" style="background:#6A1B9A" onclick="openImport()">📤 Import Excel</button>
       <button id="exportBtn" class="btn-add-temple" style="background:#1B5E20" onclick="exportExcel()">📥 Export Excel</button>
+      <button class="btn-add-temple" style="background:#4A148C" onclick="exportWord()">📄 Export Word</button>
       <button class="btn-add-temple" style="background:#5B4FCF" onclick="openChangelog()">📋 ประวัติ</button>
       <button class="btn-add-temple" style="background:#E65100" onclick="openSiteSettings()">⚙️ ตั้งค่าเว็บ</button>
     </div>
@@ -1388,11 +1389,19 @@ async function saveEdit() {
     if (_uploadedPath) await _sb.storage.from('temple-logos').remove([_uploadedPath]);
     const msg = 'บันทึกไม่สำเร็จ: ' + dbError.message; document.getElementById('editErr').textContent = msg; showToast(msg, 'error'); return;
   }
-  const _fldLabels = {name_th:'ชื่อวัด',abbot:'เจ้าอาวาส',address:'ที่อยู่',phone:'โทรศัพท์',email:'อีเมล',monks:'พระในพรรษา',country:'ประเทศ',president:'ประธาน'};
+  const _fldLabels = {
+    name_th:'ชื่อวัด', name_en:'ชื่อวัด (อังกฤษ)',
+    org_th:'ชื่อองค์กร', org_en:'ชื่อองค์กร (อังกฤษ)',
+    abbot:'เจ้าอาวาส', president:'ประธาน', monks:'พระในพรรษา',
+    address:'ที่อยู่', country:'ประเทศ', zone_num:'เขต',
+    phone:'โทรศัพท์', email:'อีเมล', website:'เว็บไซต์',
+    land_status:'สถานะที่ดิน', ubosot:'อุโบสถ', reg_date:'วันจดทะเบียน',
+  };
   if (isNew) {
     logChange('add', id, updates.name_th||updates.org_th, `เพิ่มวัดใหม่ · ${updates.country||''} · เขต ${updates.zone_num||''}`);
   } else {
     const _changed = Object.entries(_fldLabels).filter(([k])=>oldTemple&&oldTemple[k]!==updates[k]).map(([,v])=>v);
+    if (_uploadedPath) _changed.unshift('โลโก้');
     logChange('edit', id, updates.name_th||updates.org_th, _changed.length?'แก้ไข: '+_changed.join(', '):'แก้ไขข้อมูล');
   }
   showToast(isNew ? '✅ เพิ่มวัดใหม่สำเร็จ!' : '✅ บันทึกสำเร็จ!');
@@ -1511,6 +1520,246 @@ async function exportExcel() {
   a.click();
   URL.revokeObjectURL(url);
   showToast('✅ Export สำเร็จ ' + list.length + ' วัด');
+}
+
+// ── EXPORT WORD (DOCX via JSZip) ─────────────────────────────
+async function _loadWordLibs() {
+  await _loadScript('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
+}
+
+async function exportWord() {
+  showToast('⏳ กำลังเตรียม Export Word...');
+  await _loadWordLibs();
+
+  const list = filtered();
+  const today = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+  const zoneLabel = activeZone === 'all' ? 'ทั้งหมด' : 'เขต ' + activeZone;
+
+  const ZONE_NAMES = {
+    1: 'เขต ๑ — ยุโรปตะวันตก',
+    2: 'เขต ๒ — ยุโรปกลาง',
+    3: 'เขต ๓ — สแกนดิเนเวีย',
+    4: 'เขต ๔ — ยุโรปใต้และตะวันออก',
+  };
+
+  // Group by zone → country
+  const byZone = {};
+  list.forEach(t => {
+    const z = t.zone_num || 0;
+    if (!byZone[z]) byZone[z] = {};
+    const c = t.country || 'ไม่ระบุประเทศ';
+    if (!byZone[z][c]) byZone[z][c] = [];
+    byZone[z][c].push(t);
+  });
+
+  // XML escape
+  const xe = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const FONT = 'TH SarabunPSK';
+  const fontXml = `<w:rFonts w:ascii="${FONT}" w:hAnsi="${FONT}" w:cs="${FONT}"/>`;
+
+  const rpr = (sz, bold = false, color = '') =>
+    fontXml +
+    (bold ? '<w:b/><w:bCs/>' : '') +
+    `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` +
+    (color ? `<w:color w:val="${color}"/>` : '');
+
+  const run = (text, sz = 22, bold = false, color = '') =>
+    text ? `<w:r><w:rPr>${rpr(sz, bold, color)}</w:rPr><w:t xml:space="preserve">${xe(text)}</w:t></w:r>` : '';
+
+  const para = (content, align = 'left', bef = 40, aft = 40) =>
+    `<w:p><w:pPr><w:jc w:val="${align}"/><w:spacing w:before="${bef}" w:after="${aft}"/></w:pPr>${content}</w:p>`;
+
+  const tc = (content, w, opts = {}) => {
+    const spans = opts.span ? `<w:gridSpan w:val="${opts.span}"/>` : '';
+    const fill = opts.fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${opts.fill}"/>` : '';
+    const vAlign = opts.vAlign ? `<w:vAlign w:val="${opts.vAlign}"/>` : '';
+    return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${spans}${fill}${vAlign}<w:tcMar><w:top w:w="60" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar></w:tcPr>${content}</w:tc>`;
+  };
+
+  const tr = content => `<w:tr>${content}</w:tr>`;
+
+  // Column widths (DXA): total = WT
+  const W1 = 660, W2 = 4589, W3 = 4588, WT = 9837;
+
+  let rows = '';
+
+  // ── Header rows ──
+  rows += tr(tc(
+    para(run(`สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)  —  จำนวน ${list.length} วัด`, 30, true, 'FFFFFF'), 'center', 100, 100),
+    WT, { span: 3, fill: '7B1A1A' }
+  ));
+  rows += tr(tc(
+    para(run(`ข้อมูล ณ วันที่ ${today}  |  เขต: ${zoneLabel}`, 22, false, 'FFFFFF'), 'center', 60, 60),
+    WT, { span: 3, fill: '4A0E0E' }
+  ));
+  rows += tr(
+    tc(para(run('ที่', 22, true, 'FFFFFF'), 'center', 80, 80), W1, { fill: 'C9963A' }) +
+    tc(para(run('ชื่อวัด / เจ้าอาวาส', 22, true, 'FFFFFF'), 'center', 80, 80), W2, { fill: 'C9963A' }) +
+    tc(para(run('ที่อยู่ / ติดต่อ', 22, true, 'FFFFFF'), 'center', 80, 80), W3, { fill: 'C9963A' })
+  );
+
+  let seq = 0;
+
+  Object.keys(byZone).sort((a, b) => parseInt(a) - parseInt(b)).forEach(zNum => {
+    const zName = ZONE_NAMES[parseInt(zNum)] || `เขต ${zNum}`;
+    const countries = byZone[zNum];
+    const zTotal = Object.values(countries).reduce((n, ts) => n + ts.length, 0);
+
+    // Zone header (gray)
+    rows += tr(tc(
+      para(run(`${zName}  (${zTotal} วัด)`, 26, true), 'left', 80, 80),
+      WT, { span: 3, fill: 'D9D9D9' }
+    ));
+
+    Object.keys(countries).sort().forEach(country => {
+      const temples = countries[country];
+      const countryDisplay = country.startsWith('ประเทศ') ? country : `ประเทศ${country}`;
+
+      // Country sub-header (light gray)
+      rows += tr(tc(
+        para(run(`${countryDisplay}  (${temples.length} วัด)`, 24, true), 'left', 60, 60),
+        WT, { span: 3, fill: 'F2F2F2' }
+      ));
+
+      temples.forEach(t => {
+        seq++;
+        const bg = seq % 2 === 0 ? 'F8F8F8' : 'FFFFFF';
+
+        // Left cell: name + abbot info
+        let leftContent = '';
+        if (t.name_th || t.name_en) {
+          const nameParts = [
+            t.name_th ? run(t.name_th, 22, true) : '',
+            t.name_en ? run(`  (${t.name_en})`, 20, false) : '',
+          ].join('');
+          leftContent += `<w:p><w:pPr><w:spacing w:before="30" w:after="20"/></w:pPr>${nameParts}</w:p>`;
+        }
+        if (t.abbot) leftContent += para(run(`เจ้าอาวาส: ${t.abbot}`, 20), 'left', 20, 20);
+        if (t.president) leftContent += para(run(`ประธาน: ${t.president}`, 20), 'left', 20, 20);
+        if (t.monks) leftContent += para(run(`พระในพรรษา: ${t.monks}`, 20), 'left', 20, 20);
+        if (t.org_th) leftContent += para(run(`องค์กร: ${t.org_th}`, 20), 'left', 20, 20);
+        if (t.reg_date) leftContent += para(run(`วันจดทะเบียน: ${t.reg_date}`, 20), 'left', 20, 20);
+        if (!leftContent) leftContent = para(run('—', 20));
+
+        // Right cell: address + contact
+        let rightContent = '';
+        if (t.address) rightContent += para(run(t.address, 20), 'left', 30, 20);
+        if (t.phone) rightContent += para(run(`โทร: ${t.phone}`, 20), 'left', 20, 20);
+        if (t.email) rightContent += para(run(`Email: ${t.email}`, 20), 'left', 20, 20);
+        if (t.website) rightContent += para(run(`Web: ${t.website}`, 20), 'left', 20, 20);
+        if (t.land_status) rightContent += para(run(`ที่ดิน: ${t.land_status}`, 20), 'left', 20, 20);
+        if (t.ubosot) rightContent += para(run(`อุโบสถ: ${t.ubosot}`, 20), 'left', 20, 20);
+        if (!rightContent) rightContent = para(run('—', 20));
+
+        rows += tr(
+          tc(para(run(seq.toString(), 22, true), 'center', 30, 30), W1, { fill: bg, vAlign: 'top' }) +
+          tc(leftContent, W2, { fill: bg, vAlign: 'top' }) +
+          tc(rightContent, W3, { fill: bg, vAlign: 'top' })
+        );
+      });
+    });
+  });
+
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:body>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="240" w:after="120"/></w:pPr>
+    ${run('สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)', 48, true)}
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="80" w:after="60"/></w:pPr>
+    ${run('ข้อมูลวัดและเจ้าอาวาส', 44, false)}
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="360"/></w:pPr>
+    ${run(_siteSettings.update_year ? 'พุทธศักราช ' + _siteSettings.update_year : 'พุทธศักราช ๒๕๖๘', 32)}
+  </w:p>
+  <w:tbl>
+    <w:tblPr>
+      <w:tblStyle w:val="TableGrid"/>
+      <w:tblW w:w="${WT}" w:type="dxa"/>
+      <w:tblBorders>
+        <w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="D0D0D0"/>
+        <w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+      </w:tblBorders>
+    </w:tblPr>
+    <w:tblGrid>
+      <w:gridCol w:w="${W1}"/>
+      <w:gridCol w:w="${W2}"/>
+      <w:gridCol w:w="${W3}"/>
+    </w:tblGrid>
+    ${rows}
+  </w:tbl>
+  <w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p>
+  <w:sectPr>
+    <w:pgSz w:w="11906" w:h="16838"/>
+    <w:pgMar w:top="1008" w:right="1008" w:bottom="1008" w:left="1008"/>
+  </w:sectPr>
+</w:body>
+</w:document>`;
+
+  const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults>
+    <w:rPrDefault><w:rPr>
+      ${fontXml}
+      <w:sz w:val="22"/><w:szCs w:val="22"/>
+    </w:rPr></w:rPrDefault>
+  </w:docDefaults>
+  <w:style w:type="table" w:styleId="TableGrid">
+    <w:name w:val="Table Grid"/>
+    <w:tblPr>
+      <w:tblBorders>
+        <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+        <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
+      </w:tblBorders>
+    </w:tblPr>
+  </w:style>
+</w:styles>`;
+
+  const zip = new JSZip();
+
+  zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>`);
+
+  zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`);
+
+  zip.file('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`);
+
+  zip.file('word/document.xml', docXml);
+  zip.file('word/styles.xml', stylesXml);
+
+  const blob = await zip.generateAsync({
+    type: 'blob',
+    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `วัดสมาชิก_สธย_${zoneLabel.replace(' ', '')}_${new Date().toISOString().slice(0, 10)}.docx`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Export Word สำเร็จ ' + list.length + ' วัด');
 }
 
 // ── IMPORT EXCEL ──────────────────────────────────────────────
