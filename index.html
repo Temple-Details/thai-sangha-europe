@@ -26,7 +26,7 @@
   --shadow:0 1px 4px rgba(0,0,0,0.09);
   --shadow-md:0 3px 14px rgba(0,0,0,0.12);
 }
-body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
 
 /* ── TOPBAR ANNOUNCEMENT ── */
 .announce{
@@ -130,16 +130,18 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .page-head{
   background:var(--white);
   border-bottom:1px solid var(--border);
-  padding:20px 20px 0;
+  padding:0;
   box-shadow:var(--shadow);
 }
-.page-head-inner{max-width:1400px;margin:0 auto;}
+.page-head-inner{max-width:1400px;margin:0 auto;padding:20px 20px 0;}
 .page-head h1{
   font-size:1.35rem;font-weight:700;
   color:var(--text);margin-bottom:4px;
+  overflow-wrap:break-word;word-break:break-word;
 }
 .page-head p{
   font-size:0.88rem;color:var(--text2);margin-bottom:16px;
+  overflow-wrap:break-word;word-break:break-word;
 }
 
 /* ── STAT PILLS ── */
@@ -396,7 +398,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   padding:28px 20px;
 }
 .footer-inner{
-  max-width:1400px;margin:0 auto;
+  max-width:1100px;margin:0 auto;
   display:grid;grid-template-columns:1fr 1fr;
   gap:24px;
 }
@@ -416,7 +418,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 }
 .footer-links a:hover{color:#FFD88A;}
 .footer-bottom{
-  max-width:1400px;margin:16px auto 0;
+  max-width:1100px;margin:16px auto 0;
   padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);
   display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
 }
