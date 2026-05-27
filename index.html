@@ -246,6 +246,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   overflow:hidden;cursor:pointer;
   transition:box-shadow 0.2s,border-color 0.2s,transform 0.15s;
   display:flex;flex-direction:column;
+  opacity:0;
+}
+.card.visible{animation:cardFadeUp 0.4s ease forwards;}
+@keyframes cardFadeUp{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
 }
 .card:hover{
   box-shadow:var(--shadow-md);
@@ -541,6 +547,33 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .btn-add-temple{display:inline-flex;align-items:center;gap:6px;background:#2E7D32;color:#fff;
   border:none;border-radius:6px;padding:6px 16px;font-size:0.82rem;font-weight:600;cursor:pointer;margin-left:10px;}
 .btn-add-temple:hover{background:#1B5E20;}
+
+/* ── SKELETON LOADING ── */
+.skeleton-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;}
+.skel-top{height:3px;}
+.skel-body{padding:14px 16px 10px;flex:1;}
+.skel-head{display:flex;gap:10px;margin-bottom:12px;align-items:center;}
+.skel-circle{width:56px;height:56px;border-radius:50%;flex-shrink:0;}
+.skel-lines{flex:1;display:flex;flex-direction:column;gap:8px;}
+.skel-line{height:10px;border-radius:4px;}
+.skel-line.s{width:55%;}
+.skel-rows{display:flex;flex-direction:column;gap:7px;}
+.skel-row{height:9px;border-radius:4px;}
+.skel-row.m{width:75%;}
+.skel-row.s{width:50%;}
+.skel-sep{height:1px;background:var(--border);margin:8px 16px;}
+.skel-foot{display:flex;justify-content:space-between;padding:0 16px 12px;}
+.skel-foot-l{height:9px;width:80px;border-radius:4px;}
+.skel-foot-r{height:9px;width:60px;border-radius:4px;}
+.skel-top,.skel-circle,.skel-line,.skel-row,.skel-foot-l,.skel-foot-r{
+  background:linear-gradient(90deg,#ececec 25%,#f5f5f5 50%,#ececec 75%);
+  background-size:600px 100%;
+  animation:skelShimmer 1.4s infinite linear;
+}
+@keyframes skelShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+
+/* ── BADGE ใหม่ ── */
+.badge-new{display:inline-block;background:#2E7D32;color:#fff;font-size:0.63rem;font-weight:700;padding:1px 7px;border-radius:40px;margin-left:6px;vertical-align:middle;letter-spacing:0.3px;}
 </style>
 </head>
 <body>
@@ -831,7 +864,8 @@ async function saveSiteSettings() {
 
 // ── Load temples from Supabase ────────────────────────────────
 async function loadTemples() {
-  document.getElementById('grid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3)">⏳ กำลังโหลดข้อมูล...</div>';
+  const skeletonCard = `<div class="skeleton-card"><div class="skel-top"></div><div class="skel-body"><div class="skel-head"><div class="skel-circle"></div><div class="skel-lines"><div class="skel-line"></div><div class="skel-line s"></div></div></div><div class="skel-rows"><div class="skel-row"></div><div class="skel-row m"></div><div class="skel-row s"></div></div></div><div class="skel-sep"></div><div class="skel-foot"><div class="skel-foot-l"></div><div class="skel-foot-r"></div></div></div>`;
+  document.getElementById('grid').innerHTML = Array(6).fill(skeletonCard).join('');
   const { data, error } = await _sb.from('temples').select('*').order('zone_num').order('id');
   if (error) { console.error(error); return; }
   TEMPLES = data;
@@ -897,16 +931,19 @@ function render(){
     return;
   }
 
+  const NEW_MS = 7*24*60*60*1000;
+  grid.innerHTML='';
   grid.innerHTML=list.map(t=>{
     const zn=t.zone_num||0;
     const flag=FLAG[t.country]||'🌍';
+    const isNew=t.updated_at&&(Date.now()-new Date(t.updated_at).getTime())<NEW_MS;
     return `<div class="card z${zn}" onclick="openModal('${t.id}')">
       <div class="card-top-bar"></div>
       <div class="card-body">
         <div class="card-head">
           ${t.logo_url?`<img src="${t.logo_url}" class="card-logo" loading="lazy">`:`<div class="card-logo-ph">${templeIcon(28)}</div>`}
           <div class="card-titles">
-            <div class="card-name">${t.name_th||t.org_th||'—'}</div>
+            <div class="card-name">${t.name_th||t.org_th||'—'}${isNew?'<span class="badge-new">ใหม่</span>':''}</div>
             ${t.name_en?`<div class="card-name-en">${t.name_en}</div>`:''}
           </div>
           ${zn?`<span class="zone-tag">${ZONE_LABEL[zn]||''}</span>`:''}
@@ -925,6 +962,12 @@ function render(){
       </div>
     </div>`;
   }).join('');
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('#grid .card').forEach((card,i)=>{
+      card.style.animationDelay=Math.min(i*0.05,0.4)+'s';
+      card.classList.add('visible');
+    });
+  });
 }
 
 function openModal(id){
