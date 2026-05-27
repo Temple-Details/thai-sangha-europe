@@ -445,6 +445,13 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   .mk{min-width:100px;}
   .page-head{padding:14px 16px 0;}
   .main{padding:14px 16px 60px;}
+  /* fix: ป้องกัน logo text ดันปุ่ม 🔒 หลุดกรอบ */
+  .nav-logo{flex:1;min-width:0;overflow:hidden;}
+  .nav-logo-text{overflow:hidden;}
+  .nav-logo-th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;}
+  .nav-logo-en{display:none;}
+  /* fix: ปุ่ม 🔒 ไม่หลุดกรอบ */
+  .nav-inner{padding:0 12px;gap:6px;}
 }
 
 /* ── LOGO ── */
@@ -461,7 +468,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .admin-bar{position:fixed;bottom:0;left:0;right:0;background:var(--red-dark);color:#fff;padding:6px 12px;padding-bottom:calc(6px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:4px;font-size:0.82rem;z-index:500;box-shadow:0 -2px 8px rgba(0,0,0,0.3);}
 .admin-bar-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .admin-bar-top span{font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
-.admin-bar-btns{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.admin-bar-btns-wrap{position:relative;}
+.admin-bar-btns-wrap::after{content:'';position:absolute;right:0;top:0;bottom:0;width:28px;background:linear-gradient(to right,transparent,var(--red-dark));pointer-events:none;border-radius:0 4px 4px 0;}
+.admin-bar-btns{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;padding-right:24px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .admin-bar-btns::-webkit-scrollbar{display:none;}
 .admin-bar button{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:0.78rem;white-space:nowrap;flex-shrink:0;}
 .admin-bar button:hover{background:rgba(255,255,255,0.25);}
@@ -658,12 +667,14 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <span>🔑 <span id="adminEmail2"></span></span>
     <button onclick="doLogout()">ออกจากระบบ</button>
   </div>
-  <div class="admin-bar-btns">
-    <button class="btn-add-temple" onclick="openAddTemple()">➕ เพิ่มวัดใหม่</button>
-    <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
-    <button class="btn-add-temple" style="background:#6A1B9A" onclick="openImport()">📤 Import Excel</button>
-    <button id="exportBtn" class="btn-add-temple" style="background:#1B5E20" onclick="exportExcel()">📥 Export Excel</button>
-    <button class="btn-add-temple" style="background:#E65100" onclick="openSiteSettings()">⚙️ ตั้งค่าเว็บ</button>
+  <div class="admin-bar-btns-wrap">
+    <div class="admin-bar-btns">
+      <button class="btn-add-temple" onclick="openAddTemple()">➕ เพิ่มวัดใหม่</button>
+      <button class="btn-add-temple" style="background:#1565C0" onclick="openAdminSearch()">🔍 ค้นหาวัด</button>
+      <button class="btn-add-temple" style="background:#6A1B9A" onclick="openImport()">📤 Import Excel</button>
+      <button id="exportBtn" class="btn-add-temple" style="background:#1B5E20" onclick="exportExcel()">📥 Export Excel</button>
+      <button class="btn-add-temple" style="background:#E65100" onclick="openSiteSettings()">⚙️ ตั้งค่าเว็บ</button>
+    </div>
   </div>
 </div>
 
@@ -1039,7 +1050,11 @@ function showAdminBar() {
   const emailEl = document.getElementById('adminEmail2');
   if (emailEl) emailEl.textContent = _adminUser?.email || '';
   const mainEl = document.querySelector('.main') || document.querySelector('main') || document.body;
-  if (mainEl) mainEl.style.paddingBottom = '90px';
+  // คำนวณความสูงจริงของ admin bar แทนค่าตายตัว 90px
+  setTimeout(() => {
+    const barH = bar ? bar.offsetHeight : 90;
+    if (mainEl) mainEl.style.paddingBottom = (barH + 12) + 'px';
+  }, 50);
   resetInactiveTimer();
 }
 function openAdminLogin() {
@@ -1824,41 +1839,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 <div class="modal-overlay" id="siteSettingsOverlay">
   <div class="modal-box">
     <h3>&#9881;&#65039; ตั้งค่าเว็บไซต์</h3>
-
     <div class="form-row" style="margin-bottom:18px;">
       <label style="display:block;font-weight:600;margin-bottom:8px;">โลโก้องค์กร</label>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
-        <img id="sLogoPreview" src="logo.png"
-          style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:#f5f5f5;">
+        <img id="sLogoPreview" src="logo.png" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:#f5f5f5;">
         <div style="font-size:0.82rem;color:var(--text2);">โลโก้ปัจจุบัน<br>คลิกด้านล่างเพื่อเปลี่ยน</div>
       </div>
-      <div class="upload-area"
-        onclick="document.getElementById('sLogoFile').click()"
-        style="padding:14px;text-align:center;cursor:pointer;">
+      <div class="upload-area" onclick="document.getElementById('sLogoFile').click()" style="padding:14px;text-align:center;cursor:pointer;">
         &#128247; คลิกเพื่อเลือกโลโก้ใหม่
       </div>
       <input type="file" id="sLogoFile" accept="image/*" style="display:none" onchange="previewSiteLogo(this)">
       <div style="font-size:0.75rem;color:var(--text3);margin-top:5px;">รองรับ JPG, PNG, WebP แนะนำ 200x200px</div>
     </div>
-
     <div class="form-row" style="margin-bottom:18px;">
       <label style="display:block;font-weight:600;margin-bottom:6px;">ปี พ.ศ. ที่แสดงในหัวเว็บ</label>
-      <input id="sUpdateYear" type="text" placeholder="เช่น 2568"
-        style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;">
+      <input id="sUpdateYear" type="text" placeholder="เช่น 2568" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:0.95rem;">
       <div style="font-size:0.75rem;color:var(--text3);margin-top:4px;">ใช้เลขไทยหรืออารบิกก็ได้</div>
     </div>
-
     <div id="siteSettingsErr" style="color:#c00;font-size:0.83rem;min-height:18px;margin-bottom:8px;"></div>
-
     <div style="display:flex;gap:10px;margin-top:4px;">
-      <button onclick="closeSiteSettings()"
-        style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:0.9rem;">
-        ยกเลิก
-      </button>
-      <button onclick="saveSiteSettings()"
-        style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">
-        บันทึก
-      </button>
+      <button onclick="closeSiteSettings()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:0.9rem;">ยกเลิก</button>
+      <button onclick="saveSiteSettings()" style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">บันทึก</button>
     </div>
   </div>
 </div>
