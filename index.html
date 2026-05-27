@@ -869,7 +869,7 @@ async function saveSiteSettings() {
 async function loadTemples() {
   const skeletonCard = `<div class="skeleton-card"><div class="skel-top"></div><div class="skel-body"><div class="skel-head"><div class="skel-circle"></div><div class="skel-lines"><div class="skel-line"></div><div class="skel-line s"></div></div></div><div class="skel-rows"><div class="skel-row"></div><div class="skel-row m"></div><div class="skel-row s"></div></div></div><div class="skel-sep"></div><div class="skel-foot"><div class="skel-foot-l"></div><div class="skel-foot-r"></div></div></div>`;
   document.getElementById('grid').innerHTML = Array(6).fill(skeletonCard).join('');
-  const { data, error } = await _sb.from('temples').select('*').order('zone_num').order('id');
+  const { data, error } = await _sb.from('temples').select('*').order('zone_num').order('country').order('id');
   if (error) { console.error(error); return; }
   TEMPLES = data;
   // อัปเดตสถิติจากข้อมูลจริง
