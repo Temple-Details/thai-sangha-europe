@@ -6,8 +6,7 @@
 <title>วัดสมาชิก ส.ธ.ย. — สหภาพพระธรรมทูตไทยในทวีปยุโรป</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<!-- xlsx และ exceljs โหลด lazy เฉพาะตอนแอดมินใช้งาน Export/Import -->
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -1335,8 +1334,24 @@ async function saveEdit() {
 
 // ── Admin trigger via ?admin in URL ──────────────────────────
 
+// ── Lazy load helper ─────────────────────────────────────────
+function _loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+async function _loadExcelLibs() {
+  await _loadScript('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+  await _loadScript('https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js');
+}
+
 // ── EXPORT EXCEL (styled with ExcelJS) ───────────────────────
 async function exportExcel() {
+  showToast('⏳ กำลังเตรียม Export...');
+  await _loadExcelLibs();
   const list = filtered();
   const cols = [
     ['id','รหัสวัด'],['name_th','ชื่อวัด (ไทย)'],['name_en','ชื่อวัด (อังกฤษ)'],
@@ -1434,7 +1449,8 @@ const IMPORT_COLS = ['id','name_th','name_en','org_th','org_en','abbot','preside
   'monks','address','phone','email','website','land_status','ubosot','country','zone','zone_num','reg_date'];
 let _importData = [];
 
-function downloadTemplate() {
+async function downloadTemplate() {
+  await _loadExcelLibs();
   const headers = ['id','name_th','name_en','org_th','org_en','abbot','president',
     'monks','address','phone','email','website','land_status','ubosot','country','zone','zone_num','reg_date'];
   const example = ['2565.1.001','วัดตัวอย่าง','Wat Example','มูลนิธิตัวอย่าง','Example Foundation',
@@ -1448,7 +1464,9 @@ function downloadTemplate() {
   XLSX.writeFile(wb, 'template_import_วัด.xlsx');
 }
 
-function openImport() {
+async function openImport() {
+  showToast('⏳ กำลังเตรียม Import...');
+  await _loadExcelLibs();
   resetImport();
   document.getElementById('importOverlay').classList.add('show');
 }
