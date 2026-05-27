@@ -1575,7 +1575,7 @@ async function exportWord() {
     const spans = opts.span ? `<w:gridSpan w:val="${opts.span}"/>` : '';
     const fill = opts.fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${opts.fill}"/>` : '';
     const vAlign = opts.vAlign ? `<w:vAlign w:val="${opts.vAlign}"/>` : '';
-    return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${spans}${fill}${vAlign}<w:tcMar><w:top w:w="60" w:type="dxa"/><w:left w:w="120" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:right w:w="120" w:type="dxa"/></w:tcMar></w:tcPr>${content}</w:tc>`;
+    return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${spans}${fill}${vAlign}<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="150" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="150" w:type="dxa"/></w:tcMar></w:tcPr>${content}</w:tc>`;
   };
 
   const tr = content => `<w:tr>${content}</w:tr>`;
@@ -1587,17 +1587,17 @@ async function exportWord() {
 
   // ── Header rows ──
   rows += tr(tc(
-    para(run(`สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)  —  จำนวน ${list.length} วัด`, 30, true, 'FFFFFF'), 'center', 100, 100),
+    para(run(`สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)  —  จำนวน ${list.length} วัด`, 38, true, 'FFFFFF'), 'center', 140, 140),
     WT, { span: 3, fill: '7B1A1A' }
   ));
   rows += tr(tc(
-    para(run(`ข้อมูล ณ วันที่ ${today}  |  เขต: ${zoneLabel}`, 22, false, 'FFFFFF'), 'center', 60, 60),
+    para(run(`ข้อมูล ณ วันที่ ${today}  |  เขต: ${zoneLabel}`, 28, false, 'FFFFFF'), 'center', 80, 80),
     WT, { span: 3, fill: '4A0E0E' }
   ));
   rows += tr(
-    tc(para(run('ที่', 22, true, 'FFFFFF'), 'center', 80, 80), W1, { fill: 'C9963A' }) +
-    tc(para(run('ชื่อวัด / เจ้าอาวาส', 22, true, 'FFFFFF'), 'center', 80, 80), W2, { fill: 'C9963A' }) +
-    tc(para(run('ที่อยู่ / ติดต่อ', 22, true, 'FFFFFF'), 'center', 80, 80), W3, { fill: 'C9963A' })
+    tc(para(run('ที่', 28, true, 'FFFFFF'), 'center', 100, 100), W1, { fill: 'C9963A' }) +
+    tc(para(run('ชื่อวัด / เจ้าอาวาส', 28, true, 'FFFFFF'), 'center', 100, 100), W2, { fill: 'C9963A' }) +
+    tc(para(run('ที่อยู่ / ติดต่อ', 28, true, 'FFFFFF'), 'center', 100, 100), W3, { fill: 'C9963A' })
   );
 
   let seq = 0;
@@ -1609,7 +1609,7 @@ async function exportWord() {
 
     // Zone header (gray)
     rows += tr(tc(
-      para(run(`${zName}  (${zTotal} วัด)`, 26, true), 'left', 80, 80),
+      para(run(`${zName}  (${zTotal} วัด)`, 32, true), 'left', 120, 120),
       WT, { span: 3, fill: 'D9D9D9' }
     ));
 
@@ -1619,7 +1619,7 @@ async function exportWord() {
 
       // Country sub-header (light gray)
       rows += tr(tc(
-        para(run(`${countryDisplay}  (${temples.length} วัด)`, 24, true), 'left', 60, 60),
+        para(run(`${countryDisplay}  (${temples.length} วัด)`, 30, true), 'left', 100, 100),
         WT, { span: 3, fill: 'F2F2F2' }
       ));
 
@@ -1631,30 +1631,27 @@ async function exportWord() {
         let leftContent = '';
         if (t.name_th || t.name_en) {
           const nameParts = [
-            t.name_th ? run(t.name_th, 22, true) : '',
-            t.name_en ? run(`  (${t.name_en})`, 20, false) : '',
+            t.name_th ? run(t.name_th, 28, true) : '',
+            t.name_en ? run(`  (${t.name_en})`, 24, false, '555555') : '',
           ].join('');
-          leftContent += `<w:p><w:pPr><w:spacing w:before="30" w:after="20"/></w:pPr>${nameParts}</w:p>`;
+          leftContent += `<w:p><w:pPr><w:spacing w:before="60" w:after="40"/></w:pPr>${nameParts}</w:p>`;
         }
-        if (t.abbot) leftContent += para(run(`เจ้าอาวาส: ${t.abbot}`, 20), 'left', 20, 20);
-        if (t.president) leftContent += para(run(`ประธาน: ${t.president}`, 20), 'left', 20, 20);
-        if (t.monks) leftContent += para(run(`พระในพรรษา: ${t.monks}`, 20), 'left', 20, 20);
-        if (t.org_th) leftContent += para(run(`องค์กร: ${t.org_th}`, 20), 'left', 20, 20);
-        if (t.reg_date) leftContent += para(run(`วันจดทะเบียน: ${t.reg_date}`, 20), 'left', 20, 20);
-        if (!leftContent) leftContent = para(run('—', 20));
+        if (t.abbot) leftContent += para(run(`เจ้าอาวาส: ${t.abbot}`, 26), 'left', 30, 30);
+        if (t.president) leftContent += para(run(`ประธาน: ${t.president}`, 26), 'left', 30, 30);
+        if (t.monks) leftContent += para(run(`พระในพรรษา: ${t.monks}`, 26), 'left', 30, 30);
+        if (t.org_th) leftContent += para(run(`องค์กร: ${t.org_th}`, 24, false, '555555'), 'left', 30, 30);
+        if (!leftContent) leftContent = para(run('—', 26));
 
         // Right cell: address + contact
         let rightContent = '';
-        if (t.address) rightContent += para(run(t.address, 20), 'left', 30, 20);
-        if (t.phone) rightContent += para(run(`โทร: ${t.phone}`, 20), 'left', 20, 20);
-        if (t.email) rightContent += para(run(`Email: ${t.email}`, 20), 'left', 20, 20);
-        if (t.website) rightContent += para(run(`Web: ${t.website}`, 20), 'left', 20, 20);
-        if (t.land_status) rightContent += para(run(`ที่ดิน: ${t.land_status}`, 20), 'left', 20, 20);
-        if (t.ubosot) rightContent += para(run(`อุโบสถ: ${t.ubosot}`, 20), 'left', 20, 20);
-        if (!rightContent) rightContent = para(run('—', 20));
+        if (t.address) rightContent += para(run(t.address, 26), 'left', 60, 40);
+        if (t.phone) rightContent += para(run(`📞  ${t.phone}`, 26), 'left', 30, 30);
+        if (t.email) rightContent += para(run(`✉  ${t.email}`, 26), 'left', 30, 30);
+        if (t.website) rightContent += para(run(`🌐  ${t.website}`, 26), 'left', 30, 30);
+        if (!rightContent) rightContent = para(run('—', 26));
 
         rows += tr(
-          tc(para(run(seq.toString(), 22, true), 'center', 30, 30), W1, { fill: bg, vAlign: 'top' }) +
+          tc(para(run(seq.toString(), 28, true), 'center', 60, 60), W1, { fill: bg, vAlign: 'top' }) +
           tc(leftContent, W2, { fill: bg, vAlign: 'top' }) +
           tc(rightContent, W3, { fill: bg, vAlign: 'top' })
         );
@@ -1666,14 +1663,14 @@ async function exportWord() {
 <w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
   xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
 <w:body>
-  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="240" w:after="120"/></w:pPr>
-    ${run('สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)', 48, true)}
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="300" w:after="160"/></w:pPr>
+    ${run('สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)', 52, true)}
   </w:p>
-  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="80" w:after="60"/></w:pPr>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="80" w:after="80"/></w:pPr>
     ${run('ข้อมูลวัดและเจ้าอาวาส', 44, false)}
   </w:p>
-  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="360"/></w:pPr>
-    ${run(_siteSettings.update_year ? 'พุทธศักราช ' + _siteSettings.update_year : 'พุทธศักราช ๒๕๖๘', 32)}
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="60" w:after="400"/></w:pPr>
+    ${run(_siteSettings.update_year ? 'พุทธศักราช ' + _siteSettings.update_year : 'พุทธศักราช ๒๕๖๘', 36)}
   </w:p>
   <w:tbl>
     <w:tblPr>
@@ -1708,7 +1705,7 @@ async function exportWord() {
   <w:docDefaults>
     <w:rPrDefault><w:rPr>
       ${fontXml}
-      <w:sz w:val="22"/><w:szCs w:val="22"/>
+      <w:sz w:val="26"/><w:szCs w:val="26"/>
     </w:rPr></w:rPrDefault>
   </w:docDefaults>
   <w:style w:type="table" w:styleId="TableGrid">
