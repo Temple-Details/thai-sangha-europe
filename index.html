@@ -784,6 +784,12 @@ let _adminUser = null;
 let _editFile = null;
 let _siteSettings = {};
 
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 // ── Temple SVG icon (แทน emoji 🕌 ให้เหมือนกันทุก OS) ─────────
 function templeIcon(size=28){
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 40 40" aria-hidden="true">
@@ -940,27 +946,27 @@ function render(){
     const zn=t.zone_num||0;
     const flag=FLAG[t.country]||'🌍';
     const isNew=t.updated_at&&(Date.now()-new Date(t.updated_at).getTime())<NEW_MS;
-    return `<div class="card z${zn}" onclick="openModal('${t.id}')">
+    return `<div class="card z${zn}" onclick="openModal('${esc(t.id)}')">
       <div class="card-top-bar"></div>
       <div class="card-body">
         <div class="card-head">
-          ${t.logo_url?`<img src="${t.logo_url}" class="card-logo" loading="lazy">`:`<div class="card-logo-ph">${templeIcon(28)}</div>`}
+          ${t.logo_url?`<img src="${esc(t.logo_url)}" class="card-logo" loading="lazy">`:`<div class="card-logo-ph">${templeIcon(28)}</div>`}
           <div class="card-titles">
-            <div class="card-name">${t.name_th||t.org_th||'—'}${isNew?'<span class="badge-new">ใหม่</span>':''}</div>
-            ${t.name_en?`<div class="card-name-en">${t.name_en}</div>`:''}
+            <div class="card-name">${esc(t.name_th||t.org_th||'—')}${isNew?'<span class="badge-new">ใหม่</span>':''}</div>
+            ${t.name_en?`<div class="card-name-en">${esc(t.name_en)}</div>`:''}
           </div>
           ${zn?`<span class="zone-tag">${ZONE_LABEL[zn]||''}</span>`:''}
         </div>
         <div class="card-rows">
-          ${t.abbot?`<div class="crow"><span class="crow-icon">🧘</span><span>เจ้าอาวาส: ${t.abbot}</span></div>`:''}
-          ${t.address?`<div class="crow"><span class="crow-icon">📍</span><span>${t.address}</span></div>`:''}
-          ${t.phone?`<div class="crow"><span class="crow-icon">📞</span><span>${t.phone}</span></div>`:''}
-          ${t.monks?`<div class="crow"><span class="crow-icon">🙏</span><span>พระในพรรษา ${t.monks}</span></div>`:''}
+          ${t.abbot?`<div class="crow"><span class="crow-icon">🧘</span><span>เจ้าอาวาส: ${esc(t.abbot)}</span></div>`:''}
+          ${t.address?`<div class="crow"><span class="crow-icon">📍</span><span>${esc(t.address)}</span></div>`:''}
+          ${t.phone?`<div class="crow"><span class="crow-icon">📞</span><span>${esc(t.phone)}</span></div>`:''}
+          ${t.monks?`<div class="crow"><span class="crow-icon">🙏</span><span>พระในพรรษา ${esc(t.monks)}</span></div>`:''}
         </div>
       </div>
       <div class="card-sep"></div>
       <div class="card-foot">
-        <span class="ctag">${flag} ${t.country}</span>
+        <span class="ctag">${flag} ${esc(t.country)}</span>
         <button class="cta-btn">ดูรายละเอียด →</button>
       </div>
     </div>`;
@@ -991,29 +997,29 @@ function openModal(id){
 
   const ubosotYes=t.ubosot&&t.ubosot.includes('มี');
   const ubosotHtml=t.ubosot
-    ?`<span class="ubosot-pill ${ubosotYes?'up-yes':'up-no'}">${t.ubosot}</span>`:'—';
+    ?`<span class="ubosot-pill ${ubosotYes?'up-yes':'up-no'}">${esc(t.ubosot)}</span>`:'—';
 
   const sections=[
     ['ข้อมูลองค์กร',[
-      ['ชื่อองค์กร (ภาษาไทย)',t.org_th],
-      ['ชื่อองค์กร (ภาษาอังกฤษ)',t.org_en],
-      ['วันที่จดทะเบียน',t.reg_date],
+      ['ชื่อองค์กร (ภาษาไทย)',esc(t.org_th)],
+      ['ชื่อองค์กร (ภาษาอังกฤษ)',esc(t.org_en)],
+      ['วันที่จดทะเบียน',esc(t.reg_date)],
     ]],
     ['บุคลากร',[
-      ['ประธานสมาคม',t.president],
-      ['เจ้าอาวาส',t.abbot],
-      ['พระในพรรษา',t.monks],
+      ['ประธานสมาคม',esc(t.president)],
+      ['เจ้าอาวาส',esc(t.abbot)],
+      ['พระในพรรษา',esc(t.monks)],
     ]],
     ['สถานที่และทรัพย์สิน',[
-      ['ที่อยู่',t.address],
+      ['ที่อยู่',esc(t.address)],
       ['แผนที่',t.address?`<a href="https://maps.google.com/?q=${encodeURIComponent((t.name_th||t.org_th||"")+" "+t.address)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;text-decoration:none;">📍 เปิด Google Maps</a>`:''],
-      ['สถานะที่ดิน/อาคาร',t.land_status],
+      ['สถานะที่ดิน/อาคาร',esc(t.land_status)],
       ['อุโบสถ/พัทธสีมา',ubosotHtml],
     ]],
     ['ติดต่อ',[
-      ['โทรศัพท์',t.phone?`<a href="tel:${t.phone}">${t.phone}</a>`:''],
-      ['อีเมล',t.email?`<a href="mailto:${t.email}">${t.email}</a>`:''],
-      ['เว็บไซต์/โซเชียล',t.website],
+      ['โทรศัพท์',t.phone?`<a href="tel:${esc(t.phone)}">${esc(t.phone)}</a>`:''],
+      ['อีเมล',t.email?`<a href="mailto:${esc(t.email)}">${esc(t.email)}</a>`:''],
+      ['เว็บไซต์/โซเชียล',esc(t.website)],
     ]],
   ];
 
@@ -1242,7 +1248,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeAdminSearch();
       openEdit(found[0].id);
     } else if (found.length > 0 && found.length <= 5) {
-      const list = found.map(t => `<div onclick="closeAdminSearch();openEdit('${t.id}')" style="padding:6px 12px;cursor:pointer;color:#fff;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.1);">${t.name_th||t.org_th}</div>`).join('');
+      const list = found.map(t => `<div onclick="closeAdminSearch();openEdit('${esc(t.id)}')" style="padding:6px 12px;cursor:pointer;color:#fff;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.1);">${esc(t.name_th||t.org_th)}</div>`).join('');
       let dropdown = document.getElementById('adminSearchDropdown');
       if (!dropdown) {
         dropdown = document.createElement('div');
@@ -1356,12 +1362,14 @@ async function saveEdit() {
     updated_at: new Date().toISOString(),
   };
   // Upload logo if selected
+  let _uploadedPath = null;
   if (_editFile) {
     const path = `${id}.jpg`;
     const { error: upErr } = await _sb.storage.from('temple-logos').upload(path, _editFile, { upsert: true, contentType: 'image/jpeg' });
     if (upErr) { const m='อัปโหลดรูปไม่สำเร็จ: '+upErr.message; document.getElementById('editErr').textContent=m; showToast(m,'error'); console.error('Upload error:',upErr); return; }
     const { data: urlData } = _sb.storage.from('temple-logos').getPublicUrl(path);
     updates.logo_url = urlData.publicUrl + '?t=' + Date.now();
+    _uploadedPath = path;
   }
   let dbError;
   if (isNew) {
@@ -1376,7 +1384,10 @@ async function saveEdit() {
       if (idx >= 0) TEMPLES[idx] = { ...TEMPLES[idx], ...updates };
     }
   }
-  if (dbError) { const msg = 'บันทึกไม่สำเร็จ: ' + dbError.message; document.getElementById('editErr').textContent = msg; showToast(msg, 'error'); return; }
+  if (dbError) {
+    if (_uploadedPath) await _sb.storage.from('temple-logos').remove([_uploadedPath]);
+    const msg = 'บันทึกไม่สำเร็จ: ' + dbError.message; document.getElementById('editErr').textContent = msg; showToast(msg, 'error'); return;
+  }
   const _fldLabels = {name_th:'ชื่อวัด',abbot:'เจ้าอาวาส',address:'ที่อยู่',phone:'โทรศัพท์',email:'อีเมล',monks:'พระในพรรษา',country:'ประเทศ',president:'ประธาน'};
   if (isNew) {
     logChange('add', id, updates.name_th||updates.org_th, `เพิ่มวัดใหม่ · ${updates.country||''} · เขต ${updates.zone_num||''}`);
@@ -1655,25 +1666,69 @@ function previewImportFile(file) {
   reader.readAsArrayBuffer(file);
 }
 
+let _importSnapshot = null;
+let _importNewIds = [];
+let _undoTimer = null;
+
 async function doImport() {
   if (!_importData.length) return;
   const { data: { session } } = await _sb.auth.getSession();
   if (!session) { showToast('กรุณา Login ก่อน', 'error'); return; }
   document.getElementById('importErr').textContent = 'กำลัง import...';
-  // Upsert all rows (update if exists, insert if new)
+
+  const _existIds = new Set(TEMPLES.map(t=>t.id));
+  const _updCnt = _importData.filter(r=>_existIds.has(r.id)).length;
+  const _newCnt = _importData.length - _updCnt;
+  const _totalCnt = _importData.length;
+
+  // Snapshot วัดที่จะถูก overwrite เพื่อ Undo
+  const updateIds = _importData.filter(r=>_existIds.has(r.id)).map(r=>r.id);
+  const newIds = _importData.filter(r=>!_existIds.has(r.id)).map(r=>r.id);
+  let snapshot = [];
+  if (updateIds.length) {
+    const { data } = await _sb.from('temples').select('*').in('id', updateIds);
+    snapshot = data || [];
+  }
+
   const { error } = await _sb.from('temples').upsert(_importData, { onConflict: 'id' });
   if (error) {
     document.getElementById('importErr').textContent = 'Import ไม่สำเร็จ: ' + error.message;
     showToast('❌ Import ไม่สำเร็จ', 'error');
     return;
   }
-  const _existIds = new Set(TEMPLES.map(t=>t.id));
-  const _updCnt = _importData.filter(r=>_existIds.has(r.id)).length;
-  const _newCnt = _importData.length - _updCnt;
-  const _totalCnt = _importData.length;
+  _importSnapshot = snapshot;
+  _importNewIds = newIds;
   logChange('import', null, null, `Import Excel · อัปเดต ${_updCnt} วัด · เพิ่มใหม่ ${_newCnt} วัด · รวม ${_totalCnt} รายการ`);
   showToast('✅ Import สำเร็จ ' + _totalCnt + ' วัด');
   closeImport();
+  await loadTemples();
+  _showImportUndo(_totalCnt);
+}
+
+function _showImportUndo(count) {
+  const bar = document.getElementById('importUndoBar');
+  if (!bar) return;
+  bar.querySelector('.undo-count').textContent = count;
+  let secs = 30;
+  bar.querySelector('.undo-secs').textContent = secs;
+  bar.style.display = 'flex';
+  clearInterval(_undoTimer);
+  _undoTimer = setInterval(() => {
+    secs--;
+    bar.querySelector('.undo-secs').textContent = secs;
+    if (secs <= 0) { clearInterval(_undoTimer); bar.style.display = 'none'; _importSnapshot = null; _importNewIds = []; }
+  }, 1000);
+}
+
+async function undoImport() {
+  if (!_importSnapshot && !_importNewIds.length) { showToast('ไม่มีข้อมูล backup', 'error'); return; }
+  clearInterval(_undoTimer);
+  document.getElementById('importUndoBar').style.display = 'none';
+  showToast('⏳ กำลังย้อนกลับ...');
+  if (_importNewIds.length) await _sb.from('temples').delete().in('id', _importNewIds);
+  if (_importSnapshot && _importSnapshot.length) await _sb.from('temples').upsert(_importSnapshot, { onConflict: 'id' });
+  _importSnapshot = null; _importNewIds = [];
+  showToast('↩ ย้อนกลับ Import สำเร็จ', 'success');
   await loadTemples();
 }
 
@@ -1713,11 +1768,11 @@ async function openChangelog() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:0.9rem;">${ICON[row.action]||'📝'}</span>
-          <strong style="font-size:0.87rem;color:${COLOR[row.action]||'var(--text)'};">${row.temple_name||'—'}</strong>
+          <strong style="font-size:0.87rem;color:${COLOR[row.action]||'var(--text)'};">${esc(row.temple_name||'—')}</strong>
         </div>
         <span style="font-size:0.73rem;color:var(--text3);white-space:nowrap;flex-shrink:0;">${dateStr}</span>
       </div>
-      <div style="font-size:0.81rem;color:var(--text2);margin-top:3px;padding-left:22px;">${row.detail||''}</div>
+      <div style="font-size:0.81rem;color:var(--text2);margin-top:3px;padding-left:22px;">${esc(row.detail||'')}</div>
     </div>`;
   }).join('');
 }
@@ -1856,7 +1911,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="form-row">
         <label>ประเทศ</label>
-        <input type="text" id="eCountry" placeholder="เยอรมนี">
+        <select id="eCountry">
+          <option value="">— เลือกประเทศ —</option>
+          <optgroup label="เขต ๑ (ยุโรปตะวันตก)">
+            <option>เนเธอร์แลนด์</option>
+            <option>เบลเยียม</option>
+            <option>ฝรั่งเศส</option>
+            <option>ลักแซมบวร์ก</option>
+          </optgroup>
+          <optgroup label="เขต ๒ (ยุโรปกลาง)">
+            <option>เยอรมนี</option>
+          </optgroup>
+          <optgroup label="เขต ๓ (สแกนดิเนเวีย)">
+            <option>เดนมาร์ก</option>
+            <option>นอร์เวย์</option>
+            <option>ฟินแลนด์</option>
+            <option>สวีเดน</option>
+            <option>ไอซ์แลนด์</option>
+          </optgroup>
+          <optgroup label="เขต ๔ (ยุโรปใต้และตะวันออก)">
+            <option>กรีซ</option>
+            <option>เช็ก</option>
+            <option>ฮังการี</option>
+            <option>อิตาลี</option>
+            <option>สวิตเซอร์แลนด์</option>
+            <option>ออสเตรีย</option>
+          </optgroup>
+        </select>
       </div>
       <div class="form-row">
         <label>เขต ส.ธ.ย.</label>
@@ -1882,7 +1963,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="form-row">
         <label>จำนวนพระในพรรษา</label>
-        <input type="text" id="eMonks">
+        <select id="eMonks">
+          <option value="">— เลือก —</option>
+          <option>๑ รูป</option>
+          <option>๒-๓ รูป</option>
+          <option>๔-๕ รูป</option>
+          <option>๖ รูปขึ้นไป</option>
+        </select>
       </div>
       <div class="form-row">
         <label>วันที่ศาลอนุมัติ</label>
@@ -1890,16 +1977,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="form-row">
         <label>สถานะที่ดิน</label>
-        <input type="text" id="eLandStatus">
+        <select id="eLandStatus">
+          <option value="">— เลือก —</option>
+          <option>เจ้าของ(หมดหนี้สินแล้ว)</option>
+          <option>เจ้าของ/กำลังผ่อนชำระ</option>
+          <option>เช่า</option>
+        </select>
       </div>
       <div class="form-row">
-        <label>มีอุโบสถ</label>
-        <input type="text" id="eUbosot" list="ubosotOptions" placeholder="มี / ไม่มี / กำลังก่อสร้าง">
-        <datalist id="ubosotOptions">
-          <option value="มี">
-          <option value="ไม่มี">
-          <option value="กำลังก่อสร้าง">
-        </datalist>
+        <label>อุโบสถ/พัทธสีมา</label>
+        <select id="eUbosot">
+          <option value="">— เลือก —</option>
+          <option>มีพัทธสีมา</option>
+          <option>ไม่มีพัทธสีมา</option>
+          <option>กำลังก่อสร้าง</option>
+        </select>
       </div>
     </div>
 
@@ -1989,6 +2081,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       <button onclick="closeSiteSettings()" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;font-size:0.9rem;">ยกเลิก</button>
       <button onclick="saveSiteSettings()" style="flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">บันทึก</button>
     </div>
+  </div>
+</div>
+
+<!-- IMPORT UNDO BAR -->
+<div id="importUndoBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1565C0;color:#fff;padding:10px 16px;z-index:550;align-items:center;justify-content:space-between;gap:12px;font-size:0.85rem;box-shadow:0 -2px 8px rgba(0,0,0,0.3);">
+  <span>✅ Import <span class="undo-count">0</span> วัดสำเร็จ — ย้อนกลับได้ภายใน <span class="undo-secs">30</span> วิ</span>
+  <div style="display:flex;gap:8px;flex-shrink:0;">
+    <button onclick="undoImport()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:5px 14px;border-radius:6px;cursor:pointer;font-size:0.83rem;white-space:nowrap;">↩ ย้อนกลับ</button>
+    <button onclick="clearInterval(_undoTimer);document.getElementById('importUndoBar').style.display='none';_importSnapshot=null;_importNewIds=[];" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:1.1rem;line-height:1;">✕</button>
   </div>
 </div>
 
