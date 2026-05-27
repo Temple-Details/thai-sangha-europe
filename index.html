@@ -1248,12 +1248,15 @@ async function deleteTemple() {
 
 // ── Add New Temple ────────────────────────────────────────────
 function _regenAddId() {
-  // Bug 3 fix: อ่าน zone จาก eZone แทนค่าตายตัว
   const year = new Date().getFullYear() + 543;
   const zone = document.getElementById('eZone').value || 1;
-  const num = String(TEMPLES.length + 1).padStart(3, '0');
-  document.getElementById('editId').value = `${year}.${zone}.${num}`;
-  // Bug 2 fix: sync eZoneNum ทุกครั้งที่ eZone เปลี่ยน
+  const existIds = new Set(TEMPLES.map(t => t.id));
+  let seq = 1, newId;
+  do {
+    newId = `${year}.${zone}.${String(seq).padStart(3, '0')}`;
+    seq++;
+  } while (existIds.has(newId));
+  document.getElementById('editId').value = newId;
   document.getElementById('eZoneNum').value = zone;
 }
 
