@@ -1536,11 +1536,13 @@ async function exportWord() {
   const zoneLabel = activeZone === 'all' ? 'ทั้งหมด' : 'เขต ' + activeZone;
 
   const ZONE_NAMES = {
-    1: 'เขต ๑ — ยุโรปตะวันตก',
-    2: 'เขต ๒ — ยุโรปกลาง',
-    3: 'เขต ๓ — สแกนดิเนเวีย',
-    4: 'เขต ๔ — ยุโรปใต้และตะวันออก',
+    1: 'เขต ๑  ยุโรปตะวันตก',
+    2: 'เขต ๒  ยุโรปกลาง',
+    3: 'เขต ๓  สแกนดิเนเวีย',
+    4: 'เขต ๔  ยุโรปใต้และตะวันออก',
   };
+  const ZONE_COLORS = { 1: 'C9963A', 2: '9B2A2A', 3: '1A5FAB', 4: '1A7A3C' };
+  const ZONE_BG    = { 1: 'FFF8EC', 2: 'FFF5F5', 3: 'F0F6FF', 4: 'F0FAF4' };
 
   // Group by zone → country
   const byZone = {};
@@ -1552,146 +1554,332 @@ async function exportWord() {
     byZone[z][c].push(t);
   });
 
-  // XML escape
+  // ── Fetch logo ──
+  let logoData = null, logoExt = 'png';
+  try {
+    const logoUrl = (_siteSettings && _siteSettings.site_logo_url) ? _siteSettings.site_logo_url : 'logo.png';
+    const resp = await fetch(logoUrl);
+    if (resp.ok) {
+      logoData = new Uint8Array(await resp.arrayBuffer());
+      const ct = resp.headers.get('content-type') || '';
+      logoExt = (ct.includes('jpeg') || ct.includes('jpg')) ? 'jpeg' : 'png';
+    }
+  } catch(e) { /* logo optional */ }
+
+  // ── XML helpers ──
   const xe = s => String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   const FONT = 'TH SarabunPSK';
   const fontXml = `<w:rFonts w:ascii="${FONT}" w:hAnsi="${FONT}" w:cs="${FONT}"/>`;
 
-  const rpr = (sz, bold = false, color = '') =>
+  const rpr = (sz, bold = false, color = '', italic = false) =>
     fontXml +
-    (bold ? '<w:b/><w:bCs/>' : '') +
+    (bold   ? '<w:b/><w:bCs/>'  : '') +
+    (italic ? '<w:i/><w:iCs/>'  : '') +
     `<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/>` +
-    (color ? `<w:color w:val="${color}"/>` : '');
+    (color  ? `<w:color w:val="${color}"/>` : '');
 
-  const run = (text, sz = 22, bold = false, color = '') =>
-    text ? `<w:r><w:rPr>${rpr(sz, bold, color)}</w:rPr><w:t xml:space="preserve">${xe(text)}</w:t></w:r>` : '';
+  const run = (text, sz = 26, bold = false, color = '', italic = false) =>
+    text ? `<w:r><w:rPr>${rpr(sz, bold, color, italic)}</w:rPr><w:t xml:space="preserve">${xe(text)}</w:t></w:r>` : '';
 
   const para = (content, align = 'left', bef = 40, aft = 40) =>
     `<w:p><w:pPr><w:jc w:val="${align}"/><w:spacing w:before="${bef}" w:after="${aft}"/></w:pPr>${content}</w:p>`;
 
+  // Table cell builder — supports left-border stripe, optional fill, no-border mode
   const tc = (content, w, opts = {}) => {
-    const spans = opts.span ? `<w:gridSpan w:val="${opts.span}"/>` : '';
-    const fill = opts.fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${opts.fill}"/>` : '';
-    const vAlign = opts.vAlign ? `<w:vAlign w:val="${opts.vAlign}"/>` : '';
-    return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${spans}${fill}${vAlign}<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="150" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="150" w:type="dxa"/></w:tcMar></w:tcPr>${content}</w:tc>`;
+    const fill  = opts.fill ? `<w:shd w:val="clear" w:color="auto" w:fill="${opts.fill}"/>` : '';
+    const span  = opts.span ? `<w:gridSpan w:val="${opts.span}"/>` : '';
+    const vAlignVal = opts.vAlign || 'top';
+    let bdr = '';
+    if (opts.leftBorder) {
+      bdr = `<w:tcBorders>
+        <w:top    w:val="none"   w:sz="0"                    w:space="0" w:color="auto"/>
+        <w:left   w:val="single" w:sz="${opts.leftBorderSz || 28}" w:space="0" w:color="${opts.leftBorder}"/>
+        <w:bottom w:val="none"   w:sz="0"                    w:space="0" w:color="auto"/>
+        <w:right  w:val="none"   w:sz="0"                    w:space="0" w:color="auto"/>
+      </w:tcBorders>`;
+    } else {
+      bdr = `<w:tcBorders>
+        <w:top    w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:left   w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:right  w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+      </w:tcBorders>`;
+    }
+    return `<w:tc><w:tcPr>
+      <w:tcW w:w="${w}" w:type="dxa"/>
+      ${span}${fill}
+      <w:vAlign w:val="${vAlignVal}"/>
+      ${bdr}
+      <w:tcMar>
+        <w:top    w:w="80"  w:type="dxa"/>
+        <w:left   w:w="120" w:type="dxa"/>
+        <w:bottom w:w="80"  w:type="dxa"/>
+        <w:right  w:w="120" w:type="dxa"/>
+      </w:tcMar>
+    </w:tcPr>${content}</w:tc>`;
   };
 
-  const tr = content => `<w:tr>${content}</w:tr>`;
+  const trow = content => `<w:tr>${content}</w:tr>`;
 
-  // Column widths (DXA): total = WT
-  const W1 = 660, W2 = 4589, W3 = 4588, WT = 9837;
+  const WT = 9837;   // total content width (DXA)
+  const SW1 = 7200, SW2 = 2637;   // summary-page table cols
+  const SL1 = 600,  SL2 = 9237;   // stripe-layout table cols
 
-  let rows = '';
+  // ─────────────────────────────────────────────
+  // SECTION 1 — Logo XML (only when logo loaded)
+  // ─────────────────────────────────────────────
+  const logoXml = logoData ? `
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="280" w:after="120"/></w:pPr>
+    <w:r><w:rPr>${fontXml}</w:rPr>
+      <w:drawing>
+        <wp:inline distT="0" distB="0" distL="0" distR="0">
+          <wp:extent cx="1080000" cy="1080000"/>
+          <wp:effectExtent l="0" t="0" r="0" b="0"/>
+          <wp:docPr id="1" name="logo" descr="logo"/>
+          <wp:cNvGraphicFramePr/>
+          <a:graphic>
+            <a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+              <pic:pic>
+                <pic:nvPicPr>
+                  <pic:cNvPr id="1" name="logo"/>
+                  <pic:cNvPicPr/>
+                </pic:nvPicPr>
+                <pic:blipFill>
+                  <a:blip r:embed="rIdLogo"/>
+                  <a:stretch><a:fillRect/></a:stretch>
+                </pic:blipFill>
+                <pic:spPr>
+                  <a:xfrm><a:off x="0" y="0"/><a:ext cx="1080000" cy="1080000"/></a:xfrm>
+                  <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+                </pic:spPr>
+              </pic:pic>
+            </a:graphicData>
+          </a:graphic>
+        </wp:inline>
+      </w:drawing>
+    </w:r>
+  </w:p>` : '';
 
-  // ── Header rows ──
-  rows += tr(tc(
-    para(run(`สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)  —  จำนวน ${list.length} วัด`, 38, true, 'FFFFFF'), 'center', 140, 140),
-    WT, { span: 3, fill: '7B1A1A' }
+  // ─────────────────────────────────────────────
+  // SECTION 2 — Summary table (cover page)
+  // ─────────────────────────────────────────────
+  let sumRows = '';
+  // Header
+  sumRows += trow(tc(
+    para(run(`สหภาพพระธรรมทูตไทยในทวีปยุโรป  —  รวมทั้งสิ้น ${list.length} วัด`, 32, true, 'FFFFFF'), 'center', 110, 110),
+    WT, { span: 2, fill: '7B1A1A' }
   ));
-  rows += tr(tc(
-    para(run(`ข้อมูล ณ วันที่ ${today}  |  เขต: ${zoneLabel}`, 28, false, 'FFFFFF'), 'center', 80, 80),
-    WT, { span: 3, fill: '4A0E0E' }
-  ));
-  rows += tr(
-    tc(para(run('ที่', 28, true, 'FFFFFF'), 'center', 100, 100), W1, { fill: 'C9963A' }) +
-    tc(para(run('ชื่อวัด / เจ้าอาวาส', 28, true, 'FFFFFF'), 'center', 100, 100), W2, { fill: 'C9963A' }) +
-    tc(para(run('ที่อยู่ / ติดต่อ', 28, true, 'FFFFFF'), 'center', 100, 100), W3, { fill: 'C9963A' })
-  );
 
-  let seq = 0;
-
-  Object.keys(byZone).sort((a, b) => parseInt(a) - parseInt(b)).forEach(zNum => {
-    const zName = ZONE_NAMES[parseInt(zNum)] || `เขต ${zNum}`;
+  Object.keys(byZone).sort((a, b) => +a - +b).forEach(zNum => {
+    const zInt   = +zNum;
+    const zColor = ZONE_COLORS[zInt] || '555555';
+    const zName  = ZONE_NAMES[zInt]  || `เขต ${zNum}`;
     const countries = byZone[zNum];
     const zTotal = Object.values(countries).reduce((n, ts) => n + ts.length, 0);
 
-    // Zone header (gray)
-    rows += tr(tc(
-      para(run(`${zName}  (${zTotal} วัด)`, 32, true), 'left', 120, 120),
-      WT, { span: 3, fill: 'D9D9D9' }
-    ));
+    // Zone row
+    sumRows += trow(
+      tc(para(run(zName, 28, true, zColor), 'left', 90, 90), SW1,
+         { fill: 'F5F5F5', leftBorder: zColor, leftBorderSz: 24 }) +
+      tc(para(run(zTotal + ' วัด', 28, true, zColor), 'center', 90, 90), SW2, { fill: 'F5F5F5' })
+    );
 
+    // Country rows
     Object.keys(countries).sort().forEach(country => {
-      const temples = countries[country];
-      const countryDisplay = country.startsWith('ประเทศ') ? country : `ประเทศ${country}`;
-
-      // Country sub-header (light gray)
-      rows += tr(tc(
-        para(run(`${countryDisplay}  (${temples.length} วัด)`, 30, true), 'left', 100, 100),
-        WT, { span: 3, fill: 'F2F2F2' }
-      ));
-
-      temples.forEach(t => {
-        seq++;
-        const bg = seq % 2 === 0 ? 'F8F8F8' : 'FFFFFF';
-
-        // Left cell: name + abbot info
-        let leftContent = '';
-        if (t.name_th || t.name_en) {
-          const nameParts = [
-            t.name_th ? run(t.name_th, 28, true) : '',
-            t.name_en ? run(`  (${t.name_en})`, 24, false, '555555') : '',
-          ].join('');
-          leftContent += `<w:p><w:pPr><w:spacing w:before="60" w:after="40"/></w:pPr>${nameParts}</w:p>`;
-        }
-        if (t.abbot) leftContent += para(run(`เจ้าอาวาส: ${t.abbot}`, 26), 'left', 30, 30);
-        if (t.president) leftContent += para(run(`ประธาน: ${t.president}`, 26), 'left', 30, 30);
-        if (t.monks) leftContent += para(run(`พระในพรรษา: ${t.monks}`, 26), 'left', 30, 30);
-        if (t.org_th) leftContent += para(run(`องค์กร: ${t.org_th}`, 24, false, '555555'), 'left', 30, 30);
-        if (!leftContent) leftContent = para(run('—', 26));
-
-        // Right cell: address + contact
-        let rightContent = '';
-        if (t.address) rightContent += para(run(t.address, 26), 'left', 60, 40);
-        if (t.phone) rightContent += para(run(`📞  ${t.phone}`, 26), 'left', 30, 30);
-        if (t.email) rightContent += para(run(`✉  ${t.email}`, 26), 'left', 30, 30);
-        if (t.website) rightContent += para(run(`🌐  ${t.website}`, 26), 'left', 30, 30);
-        if (!rightContent) rightContent = para(run('—', 26));
-
-        rows += tr(
-          tc(para(run(seq.toString(), 28, true), 'center', 60, 60), W1, { fill: bg, vAlign: 'top' }) +
-          tc(leftContent, W2, { fill: bg, vAlign: 'top' }) +
-          tc(rightContent, W3, { fill: bg, vAlign: 'top' })
-        );
-      });
+      const count = countries[country].length;
+      const flagEmoji = (typeof FLAG !== 'undefined' && FLAG) ? (FLAG[country] || '') : '';
+      const display   = country.startsWith('ประเทศ') ? country : 'ประเทศ' + country;
+      sumRows += trow(
+        tc(para(run(`   ${flagEmoji}  ${display}`, 26, false, '444444'), 'left', 55, 55), SW1, { fill: 'FFFFFF' }) +
+        tc(para(run(count + ' วัด', 26, false, '666666'), 'center', 55, 55), SW2, { fill: 'FFFFFF' })
+      );
     });
   });
 
-  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
-  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:body>
-  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="300" w:after="160"/></w:pPr>
-    ${run('สหภาพพระธรรมทูตไทยในทวีปยุโรป (ส.ธ.ย.)', 52, true)}
-  </w:p>
-  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="80" w:after="80"/></w:pPr>
-    ${run('ข้อมูลวัดและเจ้าอาวาส', 44, false)}
-  </w:p>
-  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="60" w:after="400"/></w:pPr>
-    ${run(_siteSettings.update_year ? 'พุทธศักราช ' + _siteSettings.update_year : 'พุทธศักราช ๒๕๖๘', 36)}
-  </w:p>
+  const summaryTableXml = `
   <w:tbl>
     <w:tblPr>
-      <w:tblStyle w:val="TableGrid"/>
       <w:tblW w:w="${WT}" w:type="dxa"/>
       <w:tblBorders>
-        <w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>
-        <w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>
-        <w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>
-        <w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>
-        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="D0D0D0"/>
-        <w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        <w:top    w:val="single" w:sz="8" w:space="0" w:color="BBBBBB"/>
+        <w:left   w:val="none"   w:sz="0" w:space="0" w:color="auto"/>
+        <w:bottom w:val="single" w:sz="8" w:space="0" w:color="BBBBBB"/>
+        <w:right  w:val="none"   w:sz="0" w:space="0" w:color="auto"/>
+        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="E8E8E8"/>
+        <w:insideV w:val="none"   w:sz="0" w:space="0" w:color="auto"/>
       </w:tblBorders>
     </w:tblPr>
     <w:tblGrid>
-      <w:gridCol w:w="${W1}"/>
-      <w:gridCol w:w="${W2}"/>
-      <w:gridCol w:w="${W3}"/>
+      <w:gridCol w:w="${SW1}"/>
+      <w:gridCol w:w="${SW2}"/>
     </w:tblGrid>
-    ${rows}
-  </w:tbl>
+    ${sumRows}
+  </w:tbl>`;
+
+  // ─────────────────────────────────────────────
+  // SECTION 3 — Stripe temple data (one table per zone)
+  // ─────────────────────────────────────────────
+  let bodyXml = '';
+  let seq = 0;
+
+  Object.keys(byZone).sort((a, b) => +a - +b).forEach(zNum => {
+    const zInt   = +zNum;
+    const zColor = ZONE_COLORS[zInt] || '555555';
+    const zBg    = ZONE_BG[zInt]    || 'F9F9F9';
+    const zName  = ZONE_NAMES[zInt]  || `เขต ${zNum}`;
+    const countries = byZone[zNum];
+    const zTotal = Object.values(countries).reduce((n, ts) => n + ts.length, 0);
+
+    // Zone heading paragraph (left colored border accent)
+    bodyXml += `<w:p>
+      <w:pPr>
+        <w:pBdr>
+          <w:left   w:val="single" w:sz="36" w:space="4" w:color="${zColor}"/>
+          <w:bottom w:val="single" w:sz="4"  w:space="1" w:color="${zColor}"/>
+        </w:pBdr>
+        <w:shd w:val="clear" w:color="auto" w:fill="${zBg}"/>
+        <w:spacing w:before="280" w:after="60"/>
+        <w:ind w:left="180"/>
+      </w:pPr>
+      ${run(zName, 34, true, zColor)}${run(`  (${zTotal} วัด)`, 28, false, zColor)}
+    </w:p>`;
+
+    let rows = '';
+    Object.keys(countries).sort().forEach(country => {
+      const temples = countries[country];
+      const countryDisplay = country.startsWith('ประเทศ') ? country : `ประเทศ${country}`;
+      const flagEmoji = (typeof FLAG !== 'undefined' && FLAG) ? (FLAG[country] || '') : '';
+
+      // Country sub-header row (spans both cols)
+      rows += trow(
+        tc(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr></w:p>`, SL1, { fill: 'EEEEEE' }) +
+        tc(para(run(`${flagEmoji}  ${countryDisplay}  (${temples.length} วัด)`, 27, true, zColor), 'left', 70, 70), SL2, { fill: 'EEEEEE' })
+      );
+
+      temples.forEach((t, idx) => {
+        seq++;
+
+        // ── Right cell: 3 lines ──
+
+        // Line 1 — temple name (bold) + English name (gray)
+        const line1 = [
+          t.name_th ? run(t.name_th, 30, true, '1A1A1A') : '',
+          t.name_en ? run(`  ${t.name_en}`, 24, false, '999999') : '',
+        ].join('');
+
+        // Line 2 — clergy + address
+        const clergParts = [];
+        if (t.abbot)     clergParts.push(`เจ้าอาวาส: ${t.abbot}`);
+        if (t.president) clergParts.push(`ประธาน: ${t.president}`);
+        if (t.monks)     clergParts.push(`พระ ${t.monks} รูป`);
+        const clergText = clergParts.join('  |  ');
+        const line2runs = [
+          clergText      ? run(clergText, 24, false, '333333') : '',
+          clergText && t.address ? run('     ', 24) : '',
+          t.address      ? run(t.address, 24, false, '555555') : '',
+        ].join('');
+
+        // Line 3 — contacts
+        const ctParts = [];
+        if (t.phone)   ctParts.push(`📞 ${t.phone}`);
+        if (t.email)   ctParts.push(`✉ ${t.email}`);
+        if (t.website) ctParts.push(`🌐 ${t.website}`);
+        if (t.org_th)  ctParts.push(`🏛 ${t.org_th}`);
+
+        let rightContent = '';
+        rightContent += `<w:p><w:pPr><w:spacing w:before="90" w:after="28"/></w:pPr>${line1}</w:p>`;
+        if (line2runs)
+          rightContent += `<w:p><w:pPr><w:spacing w:before="0" w:after="20"/></w:pPr>${line2runs}</w:p>`;
+        if (ctParts.length)
+          rightContent += `<w:p><w:pPr><w:spacing w:before="0" w:after="80"/></w:pPr>${run(ctParts.join('   '), 23, false, '777777')}</w:p>`;
+
+        rows += trow(
+          // Left (stripe) cell — seq number with thick colored left border
+          tc(para(run(String(seq), 26, true, zColor), 'center', 80, 80), SL1,
+             { fill: zBg, leftBorder: zColor, leftBorderSz: 28 }) +
+          // Right (info) cell
+          tc(rightContent, SL2, { fill: 'FFFFFF' })
+        );
+
+        // Thin separator between temples (not after last)
+        if (idx < temples.length - 1) {
+          rows += `<w:tr><w:trPr><w:trHeight w:val="8"/></w:trPr>
+            ${tc(`<w:p><w:pPr>
+              <w:spacing w:before="0" w:after="0"/>
+              <w:pBdr><w:bottom w:val="single" w:sz="4" w:space="0" w:color="E0D8C8"/></w:pBdr>
+            </w:pPr></w:p>`, WT, { span: 2, fill: 'FAFAF8' })}
+          </w:tr>`;
+        }
+      });
+    });
+
+    bodyXml += `
+    <w:tbl>
+      <w:tblPr>
+        <w:tblW w:w="${WT}" w:type="dxa"/>
+        <w:tblBorders>
+          <w:top    w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+          <w:left   w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+          <w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+          <w:right  w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+          <w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+          <w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>
+        </w:tblBorders>
+      </w:tblPr>
+      <w:tblGrid>
+        <w:gridCol w:w="${SL1}"/>
+        <w:gridCol w:w="${SL2}"/>
+      </w:tblGrid>
+      ${rows}
+    </w:tbl>
+    <w:p><w:pPr><w:spacing w:before="0" w:after="80"/></w:pPr></w:p>`;
+  });
+
+  // ─────────────────────────────────────────────
+  // Assemble document.xml
+  // ─────────────────────────────────────────────
+  const updateYear = (_siteSettings && _siteSettings.update_year)
+    ? 'พุทธศักราช ' + _siteSettings.update_year
+    : 'พุทธศักราช ๒๕๖๘';
+
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<w:body>
+
+  ${logoXml}
+
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="80"/></w:pPr>
+    ${run('สหภาพพระธรรมทูตไทยในทวีปยุโรป', 52, true, '5C0A0A')}
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="40"/></w:pPr>
+    ${run('Union of Thai Sanghas in Europe  (ส.ธ.ย.)', 28, false, '8B4500')}
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="80" w:after="60"/></w:pPr>
+    ${run('ข้อมูลวัดและเจ้าอาวาส', 40, false, '222222')}
+  </w:p>
+  <w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="40" w:after="280"/></w:pPr>
+    ${run(updateYear, 32, false, '666666')}
+  </w:p>
+
+  ${summaryTableXml}
+
+  <w:p><w:pPr><w:jc w:val="right"/><w:spacing w:before="140" w:after="60"/></w:pPr>
+    ${run('ข้อมูล ณ วันที่ ' + today, 24, false, '999999', true)}
+  </w:p>
+
+  <w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>
+    <w:r><w:rPr><w:b/></w:rPr><w:br w:type="page"/></w:r>
+  </w:p>
+
+  ${bodyXml}
+
   <w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p>
   <w:sectPr>
     <w:pgSz w:w="11906" w:h="16838"/>
@@ -1708,27 +1896,26 @@ async function exportWord() {
       <w:sz w:val="26"/><w:szCs w:val="26"/>
     </w:rPr></w:rPrDefault>
   </w:docDefaults>
-  <w:style w:type="table" w:styleId="TableGrid">
-    <w:name w:val="Table Grid"/>
-    <w:tblPr>
-      <w:tblBorders>
-        <w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>
-        <w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>
-        <w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>
-        <w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>
-        <w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>
-        <w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>
-      </w:tblBorders>
-    </w:tblPr>
-  </w:style>
 </w:styles>`;
 
+  // ─────────────────────────────────────────────
+  // Build ZIP
+  // ─────────────────────────────────────────────
   const zip = new JSZip();
+
+  let ctLogoLine = '';
+  let relsLogoLine = '';
+  if (logoData) {
+    const mime = logoExt === 'jpeg' ? 'image/jpeg' : 'image/png';
+    ctLogoLine   = `\n  <Default Extension="${logoExt}" ContentType="${mime}"/>`;
+    relsLogoLine = `\n  <Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.${logoExt}"/>`;
+    zip.file(`word/media/logo.${logoExt}`, logoData);
+  }
 
   zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>${ctLogoLine}
   <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
   <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
 </Types>`);
@@ -1740,7 +1927,7 @@ async function exportWord() {
 
   zip.file('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${relsLogoLine}
 </Relationships>`);
 
   zip.file('word/document.xml', docXml);
@@ -1753,7 +1940,7 @@ async function exportWord() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `วัดสมาชิก_สธย_${zoneLabel.replace(' ', '')}_${new Date().toISOString().slice(0, 10)}.docx`;
+  a.download = `วัดสมาชิก_สธย_${zoneLabel.replace(/\s/g, '')}_${new Date().toISOString().slice(0, 10)}.docx`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('✅ Export Word สำเร็จ ' + list.length + ' วัด');
