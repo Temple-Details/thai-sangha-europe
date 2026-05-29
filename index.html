@@ -791,6 +791,42 @@ function esc(s) {
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+function linkify(text) {
+  if (!text) return '';
+  const urlRe = /(https?:\/\/[^\s<>"'()]+|www\.[^\s<>"'(),]+\.[^\s<>"'(),]+)/gi;
+
+  function segToHtml(seg) {
+    // 1) หา URL จริงในข้อความ
+    const parts = []; let last = 0; let m; urlRe.lastIndex = 0;
+    while ((m = urlRe.exec(seg)) !== null) {
+      if (m.index > last) parts.push(esc(seg.slice(last, m.index)));
+      const raw = m[0].replace(/[.)]+$/, '');
+      const href = raw.startsWith('http') ? raw : 'https://' + raw;
+      parts.push(`<a href="${esc(href)}" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline">${esc(raw)}</a>`);
+      last = m.index + m[0].length;
+    }
+    if (last < seg.length) parts.push(esc(seg.slice(last)));
+    const hasLink = parts.some(p => p.startsWith('<a '));
+    if (hasLink) return parts.join('');
+
+    // 2) ไม่มี URL → ถ้ามีคำ facebook/fb/เฟสบุค ให้ทำ Facebook search link
+    if (/facebook|^fb[^a-z]|เฟสบุค/i.test(seg)) {
+      const nameMatch = seg.match(/(?:facebook|fb|เฟสบุค)\s*[:;]?\s*(.+)/i);
+      const q = nameMatch ? nameMatch[1].trim() : seg;
+      const url = /^\S+$/.test(q)
+        ? 'https://www.facebook.com/' + q
+        : 'https://www.facebook.com/search/top/?q=' + encodeURIComponent(q);
+      return `<a href="${esc(url)}" target="_blank" rel="noopener" style="color:#1877F2;text-decoration:underline">📘 ${esc(seg)}</a>`;
+    }
+
+    return parts.join('') || esc(seg);
+  }
+
+  return text.split(/[,\n]+/)
+    .map(s => s.trim()).filter(Boolean)
+    .map(segToHtml).join('<br>');
+}
+
 // ── Temple SVG icon (แทน emoji 🕌 ให้เหมือนกันทุก OS) ─────────
 function templeIcon(size=28){
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 40 40" aria-hidden="true">
@@ -1020,10 +1056,7 @@ function openModal(id){
     ['ติดต่อ',[
       ['โทรศัพท์',t.phone?`<a href="tel:${esc(t.phone)}">${esc(t.phone)}</a>`:''],
       ['อีเมล',t.email?`<a href="mailto:${esc(t.email)}">${esc(t.email)}</a>`:''],
-      ['เว็บไซต์/โซเชียล',t.website?t.website.split(/[,;،\n]+/).map(s=>s.trim()).filter(Boolean).map(s=>{
-        const url=s.match(/^https?:\/\//i)?s:s.match(/^(www\.|facebook\.com|fb\.com|m\.facebook\.com)/i)?'https://'+s:s.match(/facebook\.com|fb\.com/i)?'https://'+s:null;
-        return url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(s)}</a>`:esc(s);
-      }).join('<br>'):''],
+      ['เว็บไซต์/โซเชียล',t.website?linkify(t.website):''],
     ]],
   ];
 
