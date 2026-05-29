@@ -802,7 +802,7 @@ function linkify(text) {
       if (m.index > last) parts.push(esc(seg.slice(last, m.index)));
       const raw = m[0].replace(/[.)]+$/, '');
       const href = raw.startsWith('http') ? raw : 'https://' + raw;
-      parts.push(`<a href="${esc(href)}" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline">${esc(raw)}</a>`);
+      parts.push(`<a href="${esc(href)}" target="_blank" rel="noopener" style="color:var(--red)">${esc(raw)}</a>`);
       last = m.index + m[0].length;
     }
     if (last < seg.length) parts.push(esc(seg.slice(last)));
@@ -816,7 +816,7 @@ function linkify(text) {
       const url = /^\S+$/.test(q)
         ? 'https://www.facebook.com/' + q
         : 'https://www.facebook.com/search/top/?q=' + encodeURIComponent(q);
-      return `<a href="${esc(url)}" target="_blank" rel="noopener" style="color:#1877F2;text-decoration:underline">📘 ${esc(seg)}</a>`;
+      return `<a href="${esc(url)}" target="_blank" rel="noopener" style="color:#1877F2">📘 ${esc(seg)}</a>`;
     }
 
     return parts.join('') || esc(seg);
@@ -2267,8 +2267,8 @@ async function logChange(action, templeId, templeName, detail) {
     });
     const { data: rows } = await _sb.from('temple_changelog')
       .select('id').order('changed_at', { ascending: false });
-    if (rows && rows.length > 20) {
-      const ids = rows.slice(20).map(r => r.id);
+    if (rows && rows.length > 50) {
+      const ids = rows.slice(50).map(r => r.id);
       await _sb.from('temple_changelog').delete().in('id', ids);
     }
   } catch(e) { /* log ล้มเหลวก็ไม่กระทบระบบหลัก */ }
@@ -2279,7 +2279,7 @@ async function openChangelog() {
   el.innerHTML = '<p style="color:var(--text3);text-align:center;padding:24px;">⏳ กำลังโหลด...</p>';
   document.getElementById('changelogOverlay').classList.add('show');
   const { data, error } = await _sb.from('temple_changelog')
-    .select('*').order('changed_at', { ascending: false }).limit(20);
+    .select('*').order('changed_at', { ascending: false }).limit(50);
   if (error || !data) { el.innerHTML = '<p style="color:#c00;text-align:center;padding:16px;">โหลดไม่สำเร็จ — ตรวจสอบ RLS policy</p>'; return; }
   if (!data.length) { el.innerHTML = '<p style="color:var(--text3);text-align:center;padding:24px;">ยังไม่มีประวัติการแก้ไข</p>'; return; }
   const ICON = { edit:'✏️', add:'➕', delete:'🗑️', import:'📤' };
@@ -2620,7 +2620,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 <!-- CHANGELOG MODAL -->
 <div class="modal-overlay" id="changelogOverlay">
   <div class="modal-box">
-    <h3>📋 ประวัติการแก้ไข <span style="font-size:0.78rem;font-weight:400;color:var(--text3);">(20 ครั้งล่าสุด)</span></h3>
+    <h3>📋 ประวัติการแก้ไข <span style="font-size:0.78rem;font-weight:400;color:var(--text3);">(50 ครั้งล่าสุด)</span></h3>
     <div id="changelogList" style="max-height:65vh;overflow-y:auto;"></div>
     <button class="btn-cancel" onclick="closeChangelog()" style="margin-top:14px;">ปิด</button>
   </div>
