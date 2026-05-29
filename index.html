@@ -1020,7 +1020,10 @@ function openModal(id){
     ['ติดต่อ',[
       ['โทรศัพท์',t.phone?`<a href="tel:${esc(t.phone)}">${esc(t.phone)}</a>`:''],
       ['อีเมล',t.email?`<a href="mailto:${esc(t.email)}">${esc(t.email)}</a>`:''],
-      ['เว็บไซต์/โซเชียล',esc(t.website)],
+      ['เว็บไซต์/โซเชียล',t.website?t.website.split(/[,;،\n]+/).map(s=>s.trim()).filter(Boolean).map(s=>{
+        const url=s.match(/^https?:\/\//i)?s:s.match(/^(www\.|facebook\.com|fb\.com|m\.facebook\.com)/i)?'https://'+s:s.match(/facebook\.com|fb\.com/i)?'https://'+s:null;
+        return url?`<a href="${esc(url)}" target="_blank" rel="noopener">${esc(s)}</a>`:esc(s);
+      }).join('<br>'):''],
     ]],
   ];
 
