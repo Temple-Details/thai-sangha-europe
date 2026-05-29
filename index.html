@@ -1285,7 +1285,6 @@ document.addEventListener('DOMContentLoaded', () => {
       closeAdminSearch();
       openEdit(found[0].id);
     } else if (found.length > 0 && found.length <= 5) {
-      const list = found.map(t => `<div onclick="closeAdminSearch();openEdit('${esc(t.id)}')" style="padding:6px 12px;cursor:pointer;color:#fff;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.1);">${esc(t.name_th||t.org_th)}</div>`).join('');
       let dropdown = document.getElementById('adminSearchDropdown');
       if (!dropdown) {
         dropdown = document.createElement('div');
@@ -1293,7 +1292,14 @@ document.addEventListener('DOMContentLoaded', () => {
         dropdown.style.cssText = 'position:absolute;top:100%;left:16px;right:16px;background:var(--red-dark);border-radius:0 0 8px 8px;z-index:502;box-shadow:0 4px 12px rgba(0,0,0,0.3);';
         document.getElementById('adminSearchBar').appendChild(dropdown);
       }
-      dropdown.innerHTML = list;
+      dropdown.innerHTML = '';
+      found.forEach(t => {
+        const div = document.createElement('div');
+        div.textContent = t.name_th || t.org_th;
+        div.style.cssText = 'padding:6px 12px;cursor:pointer;color:#fff;font-size:0.85rem;border-bottom:1px solid rgba(255,255,255,0.1);';
+        div.addEventListener('click', () => { closeAdminSearch(); openEdit(t.id); });
+        dropdown.appendChild(div);
+      });
     } else {
       _clearSearchDropdown();
     }
@@ -1305,8 +1311,10 @@ async function removeLogo() {
   if (!_adminUser) return;
   const id = document.getElementById('editId').value;
   if (!await showConfirm('ลบรูปโลโก้วัดนี้?')) return;
-  // Remove from storage
-  await _sb.storage.from('temple-logos').remove([id + '.jpg']);
+  // Remove from storage (ลองลบทุก format เผื่อ upload มาเป็น png/webp)
+  await Promise.all(['jpg','jpeg','png','webp'].map(ext =>
+    _sb.storage.from('temple-logos').remove([id + '.' + ext])
+  ));
   // Update DB
   await _sb.from('temples').update({ logo_url: null }).eq('id', id);
   // Update local
@@ -2092,38 +2100,85 @@ function previewImportFile(file) {
       const firstRow = raw[0];
       const keys = Object.keys(firstRow);
       if (!keys.includes('id')) { document.getElementById('importErr').textContent = 'ไม่พบคอลัมน์ "id" หรือ "No สมาชิกที่" — กรุณาตรวจสอบไฟล์'; return; }
+
+      // ── Country → Zone lookup (พร้อม alias สำหรับชื่อที่สะกดผิดบ่อยๆ) ──
+      const COUNTRY_ZONE = {
+        'เนเธอร์แลนด์':1,'netherlands':1,'holland':1,'เนเธอแลนด์':1,
+        'เบลเยียม':1,'เบลเยี่ยม':1,'belgium':1,
+        'ฝรั่งเศส':1,'ฝรั่งเศษ':1,'france':1,
+        'ลักแซมบวร์ก':1,'ลักเซมเบิร์ก':1,'luxembourg':1,
+        'เยอรมนี':2,'เยอรมัน':2,'germany':2,'deutschland':2,
+        'เดนมาร์ก':3,'denmark':3,
+        'นอร์เวย์':3,'norway':3,
+        'ฟินแลนด์':3,'finland':3,
+        'สวีเดน':3,'sweden':3,
+        'ไอซ์แลนด์':3,'iceland':3,
+        'กรีซ':4,'greece':4,
+        'เช็ก':4,'เช็ค':4,'czech':4,'czechia':4,
+        'ฮังการี':4,'hungary':4,
+        'อิตาลี':4,'italy':4,
+        'สวิตเซอร์แลนด์':4,'สวิส':4,'switzerland':4,
+        'ออสเตรีย':4,'austria':4,
+      };
+      const resolveZone = c => COUNTRY_ZONE[(c||'').toLowerCase().trim()] || null;
+
       // แปลง row → object และ auto-gen id ถ้าว่าง
       const year = new Date().getFullYear() + 543;
       const existIds = new Set(TEMPLES.map(t => t.id));
-      let autoSeq = TEMPLES.length + 1; // ตัวนับสำหรับ id ที่ต้อง auto-gen
+      let autoSeq = TEMPLES.length + 1;
+      const unknownCountries = new Set();
 
       _importData = raw.map(row => {
         const obj = {};
         IMPORT_COLS.forEach(col => { if (row[col] !== undefined && String(row[col]).trim() !== '') obj[col] = String(row[col]).trim(); });
+
+        // ── Auto-fill zone_num จาก country ──
+        const zNum = parseInt(obj.zone_num);
+        if (!zNum || zNum < 1 || zNum > 4) {
+          const z = resolveZone(obj.country);
+          if (z) { obj.zone_num = String(z); }
+          else {
+            if (obj.country) unknownCountries.add(obj.country);
+            obj.zone_num = obj.zone_num || '';
+            obj._zoneWarn = true;
+          }
+        }
+
         // ถ้าไม่มี id → สร้างใหม่อัตโนมัติ
         if (!obj.id) {
           const zone = obj.zone_num || '1';
-          const num = String(autoSeq).padStart(3, '0');
-          obj.id = `${year}.${zone}.${num}`;
+          obj.id = `${year}.${zone}.${String(autoSeq).padStart(3,'0')}`;
           autoSeq++;
         }
         return obj;
-      }).filter(r => r.name_th || r.name_en); // กรองเฉพาะแถวที่มีชื่อวัด
+      }).filter(r => r.name_th || r.name_en);
+
+      // ── แจ้งเตือนถ้ามีประเทศที่จำไม่ได้ ──
+      if (unknownCountries.size) {
+        document.getElementById('importErr').textContent =
+          `⚠️ ไม่รู้จักประเทศ: ${[...unknownCountries].join(', ')} — กรุณาตรวจสอบก่อน import`;
+      } else {
+        document.getElementById('importErr').textContent = '';
+      }
 
       // Count updates vs new
       const updates = _importData.filter(r => existIds.has(r.id)).length;
       const news = _importData.length - updates;
       document.getElementById('importSummary').innerHTML =
         `<b>พบ ${_importData.length} รายการ:</b> อัปเดต <span style="color:var(--gold)">${updates} วัด</span> · เพิ่มใหม่ <span style="color:#2E7D32;font-weight:bold;">${news} วัด</span>`;
-      // Preview table (first 15 rows) — แถวสีเขียว = วัดใหม่
+
+      // Preview table (first 15 rows)
       const showCols = ['id','name_th','country','zone_num'];
       document.getElementById('importPreviewHead').innerHTML =
         `<th style="padding:6px 8px;width:20px;"></th>` +
         showCols.map(c => `<th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);">${c}</th>`).join('');
       document.getElementById('importPreviewBody').innerHTML = _importData.slice(0,15).map(r => {
         const isNew = !existIds.has(r.id);
-        const rowStyle = isNew ? 'background:#f0faf0;' : '';
-        const badge = isNew ? `<td style="padding:5px 4px;"><span style="background:#2E7D32;color:#fff;border-radius:3px;font-size:0.7rem;padding:1px 5px;">ใหม่</span></td>` : '<td></td>';
+        const hasWarn = r._zoneWarn;
+        const rowStyle = hasWarn ? 'background:#FFF8E1;' : isNew ? 'background:#f0faf0;' : '';
+        const badge = hasWarn
+          ? `<td style="padding:5px 4px;"><span style="background:#F57F17;color:#fff;border-radius:3px;font-size:0.7rem;padding:1px 5px;">⚠️เขต?</span></td>`
+          : isNew ? `<td style="padding:5px 4px;"><span style="background:#2E7D32;color:#fff;border-radius:3px;font-size:0.7rem;padding:1px 5px;">ใหม่</span></td>` : '<td></td>';
         return `<tr style="${rowStyle}">${badge}${showCols.map(c => `<td style="padding:5px 8px;border-bottom:1px solid #f0f0f0;">${r[c]||''}</td>`).join('')}</tr>`;
       }).join('') + (_importData.length > 15 ? `<tr><td colspan="${showCols.length+1}" style="padding:6px 8px;color:var(--text3);">... และอีก ${_importData.length-15} รายการ</td></tr>` : '');
       document.getElementById('importStep1').style.display = 'none';
@@ -2262,7 +2317,7 @@ function resetInactiveTimer() {
     const bar = document.getElementById('adminBar');
     if (bar) bar.style.display = 'none';
     render();
-    alert('⏰ หมดเวลา 30 นาที — กรุณา Login ใหม่');
+    showToast('⏰ หมดเวลา 30 นาที — กรุณา Login ใหม่', 'error');
   }, INACTIVE_LIMIT);
 }
 
