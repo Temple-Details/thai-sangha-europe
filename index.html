@@ -2222,6 +2222,7 @@ function previewImport(input) {
 
 // แผนที่ชื่อคอลัมน์ภาษาไทย → ชื่อ field ในระบบ
 const THAI_COL_MAP = {
+  // รูปแบบเก่า (old import template)
   'No สมาชิกที่': 'id',
   'เขต สธย.': 'zone_num',
   'ชื่อองค์กร (ภาษาไทย)': 'org_th',
@@ -2239,6 +2240,23 @@ const THAI_COL_MAP = {
   'วัดหรืออาคาร มี/ไม่มี อุโบสถ ': 'ubosot',
   'จำนวนพระในพรรษา(โดยปกติ)': 'monks',
   'วันที่ศาลอนุมัติ': 'reg_date',
+  // รูปแบบ Export จากเว็บ (export format — ให้ import กลับได้)
+  'รหัสวัด': 'id',
+  'ชื่อวัด (ไทย)': 'name_th',
+  'ชื่อวัด (อังกฤษ)': 'name_en',
+  'ชื่อองค์กร (ไทย)': 'org_th',
+  'ชื่อองค์กร (อังกฤษ)': 'org_en',
+  'เจ้าอาวาส': 'abbot',
+  'ประธาน': 'president',
+  'พระในพรรษา': 'monks',
+  'ที่อยู่': 'address',
+  'อีเมล': 'email',
+  'เว็บไซต์': 'website',
+  'สถานะที่ดิน': 'land_status',
+  'อุโบสถ/พัทธสีมา': 'ubosot',
+  'เขต': 'zone',
+  'เลขเขต': 'zone_num',
+  'วันจดทะเบียน': 'reg_date',
 };
 
 function previewImportFile(file) {
@@ -2248,35 +2266,33 @@ function previewImportFile(file) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      // อ่านแบบ raw array ก่อน เพื่อตรวจว่า row 1 เป็น title หรือเปล่า
-      let raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
-      if (!raw.length) { document.getElementById('importErr').textContent = 'ไฟล์ว่างเปล่า'; return; }
-
-      // ถ้า row แรกไม่มีคอลัมน์ที่รู้จัก → อาจเป็น title row ให้ข้ามและอ่านใหม่จาก row 2
-      const firstKeys = Object.keys(raw[0]);
-      const hasId = firstKeys.includes('id') || firstKeys.includes('No สมาชิกที่');
-      if (!hasId) {
-        raw = XLSX.utils.sheet_to_json(ws, { defval: '', range: 1 }); // เริ่มอ่านจาก row 2
+      // ลองอ่านจากแต่ละ offset (0–4) จนกว่าจะเจอ row ที่มีคอลัมน์รู้จัก
+      let raw = [];
+      const KNOWN_FIRST_COLS = new Set(['id', 'No สมาชิกที่', 'รหัสวัด']);
+      let found = false;
+      for (let skip = 0; skip <= 4; skip++) {
+        const attempt = XLSX.utils.sheet_to_json(ws, { defval: '', range: skip });
+        if (!attempt.length) continue;
+        const firstKey = Object.keys(attempt[0])[0];
+        if (KNOWN_FIRST_COLS.has(firstKey) || Object.keys(attempt[0]).some(k => THAI_COL_MAP[k])) {
+          raw = attempt; found = true; break;
+        }
       }
-      if (!raw.length) { document.getElementById('importErr').textContent = 'ไฟล์ว่างเปล่า'; return; }
+      if (!found || !raw.length) { document.getElementById('importErr').textContent = 'ไม่พบหัวตารางที่รู้จัก — กรุณาตรวจสอบไฟล์'; return; }
 
-      // แปลงชื่อคอลัมน์ภาษาไทย → ชื่อ field ถ้าจำเป็น
-      const sampleKeys = Object.keys(raw[0]);
-      const isThaiCols = sampleKeys.includes('No สมาชิกที่');
-      if (isThaiCols) {
-        raw = raw.map(row => {
-          const mapped = {};
-          Object.entries(row).forEach(([k, v]) => {
-            const field = THAI_COL_MAP[k] || k;
-            mapped[field] = v;
-          });
-          return mapped;
+      // แปลงชื่อคอลัมน์ภาษาไทย → ชื่อ field ในระบบ
+      raw = raw.map(row => {
+        const mapped = {};
+        Object.entries(row).forEach(([k, v]) => {
+          const field = THAI_COL_MAP[k] !== undefined ? THAI_COL_MAP[k] : k;
+          mapped[field] = v;
         });
-      }
+        return mapped;
+      });
 
       const firstRow = raw[0];
       const keys = Object.keys(firstRow);
-      if (!keys.includes('id')) { document.getElementById('importErr').textContent = 'ไม่พบคอลัมน์ "id" หรือ "No สมาชิกที่" — กรุณาตรวจสอบไฟล์'; return; }
+      if (!keys.includes('id')) { document.getElementById('importErr').textContent = 'ไม่พบคอลัมน์ "id" หรือ "รหัสวัด" — กรุณาตรวจสอบไฟล์'; return; }
 
       // ── Country → Zone lookup (พร้อม alias สำหรับชื่อที่สะกดผิดบ่อยๆ) ──
       const COUNTRY_ZONE = {
