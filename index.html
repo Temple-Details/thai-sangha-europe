@@ -735,12 +735,13 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .page-head{perspective:1px;transform-style:preserve-3d;}
 .ph-layer{position:absolute;inset:-60px;will-change:transform;pointer-events:none;}
 .ph-orbs{position:absolute;inset:0;}
-.ph-orb{position:absolute;border-radius:50%;filter:blur(55px);opacity:0.18;}
+.ph-orb{position:absolute;border-radius:50%;filter:blur(55px);opacity:0.07;}
 .ph-orb-1{width:260px;height:260px;background:var(--gold);top:5%;left:10%;}
 .ph-orb-2{width:180px;height:180px;background:var(--red-dark);top:30%;right:15%;}
 .ph-orb-3{width:130px;height:130px;background:var(--gold-soft);bottom:5%;left:45%;}
 .masthead-crest{animation:phFloat 3.5s ease-in-out infinite;will-change:transform;}
 @keyframes phFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+
 </style>
 </head>
 <body>
@@ -2926,6 +2927,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     <button class="btn-cancel" onclick="closeChangelog()" style="margin-top:14px;">ปิด</button>
   </div>
 </div>
+
 
 </body>
 </html>
