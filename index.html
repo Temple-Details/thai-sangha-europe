@@ -1828,10 +1828,12 @@ async function exportWord() {
         <w:right  w:val="none" w:sz="0" w:space="0" w:color="auto"/>
       </w:tcBorders>`;
     }
+    const noWrap = opts.noWrap ? `<w:noWrap/>` : '';
     return `<w:tc><w:tcPr>
       <w:tcW w:w="${w}" w:type="dxa"/>
       ${span}${fill}
       <w:vAlign w:val="${vAlignVal}"/>
+      ${noWrap}
       ${bdr}
       <w:tcMar>
         <w:top    w:w="80"  w:type="dxa"/>
@@ -2019,7 +2021,7 @@ async function exportWord() {
         rows += trow(
           // Left (stripe) cell — seq number with thick colored left border
           tc(para(run(String(seq), 26, true, zColor), 'center', 80, 80), SL1,
-             { fill: zBg, leftBorder: zColor, leftBorderSz: 28 }) +
+             { fill: zBg, leftBorder: zColor, leftBorderSz: 28, noWrap: true }) +
           // Right (info) cell
           tc(rightContent, SL2, { fill: 'FFFFFF' })
         );
