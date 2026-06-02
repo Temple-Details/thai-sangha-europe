@@ -723,12 +723,12 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   flex-shrink:0;
   box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 6px rgba(0,0,0,0.3);
 }
-.flip-digit.go{animation:fdFlip .22s ease-in-out;}
+.flip-digit.go{animation:fdFlip .35s cubic-bezier(0.4,0,0.2,1);}
 @keyframes fdFlip{
-  0%  {transform:rotateX(0deg);   opacity:1;}
-  45% {transform:rotateX(90deg);  opacity:0;}
-  55% {transform:rotateX(-90deg); opacity:0;}
-  100%{transform:rotateX(0deg);   opacity:1;}
+  0%  {transform:rotateX(0deg);  opacity:1;}
+  40% {transform:rotateX(80deg); opacity:0.2;}
+  60% {transform:rotateX(80deg); opacity:0.2;}
+  100%{transform:rotateX(0deg);  opacity:1;}
 }
 
 /* ── PARALLAX HERO ── */
@@ -1137,23 +1137,26 @@ function _flipDigitTo(dEl, ch) {
     dEl.classList.remove('go');
     void dEl.offsetWidth;
     dEl.classList.add('go');
-    setTimeout(() => { dEl.textContent = ch; res(); }, 110);
+    setTimeout(() => { dEl.textContent = ch; res(); }, 175);
   });
 }
 async function animateCounter(el, target, totalMs) {
   if (!el) return;
   const str    = String(target);
   const digits = _buildFlipDigits(el, str.length);
-  const delay  = Math.max((totalMs || 1200) / target, 22);
-  for (let v = 1; v <= target; v++) {
+  // จำกัดจำนวน step ไม่เกิน 30 ขั้น ป้องกันกระพริบถี่เกิน
+  const steps  = Math.min(target, 30);
+  const delay  = Math.max((totalMs || 1800) / steps, 80);
+  for (let i = 1; i <= steps; i++) {
+    const v = Math.round(i * target / steps);
     const s = String(v).padStart(str.length, '0');
     const ps = [];
-    for (let i = 0; i < s.length; i++) {
-      if (digits[i].textContent !== s[i])
-        ps.push(_flipDigitTo(digits[i], s[i]));
+    for (let d = 0; d < s.length; d++) {
+      if (digits[d].textContent !== s[d])
+        ps.push(_flipDigitTo(digits[d], s[d]));
     }
     await Promise.all(ps);
-    if (v < target) await new Promise(r => setTimeout(r, Math.max(delay - 110, 10)));
+    if (i < steps) await new Promise(r => setTimeout(r, delay));
   }
 }
 
