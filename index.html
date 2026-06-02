@@ -7,43 +7,58 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- xlsx และ exceljs โหลด lazy เฉพาะตอนแอดมินใช้งาน Export/Import -->
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --red:#7B1A1A;
-  --red-dark:#4A0E0E;
-  --red-hover:#9B2A2A;
-  --gold:#C9963A;
-  --gold-light:#F5E6C8;
-  --white:#FFFFFF;
-  --bg:#F8F8F8;
-  --border:#E0E0E0;
-  --text:#202020;
-  --text2:#555;
-  --text3:#888;
-  --radius:8px;
-  --shadow:0 1px 4px rgba(0,0,0,0.09);
-  --shadow-md:0 3px 14px rgba(0,0,0,0.12);
+  --red:#5A4327;
+  --red-dark:#3D2C17;
+  --red-hover:#6E5430;
+  --gold:#9E7B33;
+  --gold-soft:#B89252;
+  --gold-light:#EFE2C6;
+  --white:#FBF6EA;
+  --bg:#F4E9D2;
+  --border:#D8C49A;
+  --border-soft:#E5D5B0;
+  --text:#3A2C18;
+  --text2:#6A5638;
+  --text3:#998760;
+  --radius:4px;
+  --shadow:0 1px 3px rgba(61,44,23,0.07);
+  --shadow-md:0 6px 22px rgba(61,44,23,0.13);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --serif-th:'Noto Serif Thai','Sarabun',serif;
+  --z1-color:#1a3f6f;
+  --z2-color:#1b5e35;
+  --z3-color:#4a1f78;
+  --z4-color:#7c1c1c;
 }
-body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;}
+/* English / Latin display in a classic serif for an official, traditional tone */
+.nav-logo-en,.card-name-en,.modal-name-en,.footer-brand .fen{
+  font-family:var(--serif);font-style:italic;letter-spacing:0.3px;
+}
 
 /* ── TOPBAR ANNOUNCEMENT ── */
 .announce{
   background:var(--red-dark);
-  color:rgba(255,255,255,0.85);
+  color:rgba(255,255,255,0.82);
   text-align:center;
   font-size:0.8rem;
   padding:7px 16px;
   line-height:1.5;
+  letter-spacing:0.1px;
 }
-.announce a{color:#FFD88A;text-decoration:underline;}
+.announce a{color:var(--gold-soft);text-decoration:none;border-bottom:1px solid rgba(194,163,92,0.5);padding-bottom:1px;}
+.announce a:hover{color:#E2C77E;}
 
 /* ── NAVBAR ── */
 .navbar{
   background:var(--red);
   position:sticky;top:0;z-index:200;
-  box-shadow:0 2px 8px rgba(0,0,0,0.25);
+  box-shadow:0 2px 10px rgba(66,16,26,0.28);
+  border-bottom:2px solid var(--gold);
 }
 .nav-inner{
   max-width:1400px;margin:0 auto;
@@ -59,8 +74,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .nav-logo-text{
   display:flex;flex-direction:column;
 }
-.nav-logo-th{font-size:0.85rem;font-weight:700;color:#fff;line-height:1.2;}
-.nav-logo-en{font-size:0.65rem;color:rgba(255,255,255,0.65);font-weight:400;letter-spacing:0.3px;}
+.nav-logo-th{font-size:0.85rem;font-weight:600;color:#fff;line-height:1.25;letter-spacing:0.2px;}
+.nav-logo-en{font-size:0.7rem;color:rgba(255,255,255,0.7);font-weight:400;}
 
 .nav-links{
   display:flex;align-items:center;gap:0;flex:1;
@@ -80,7 +95,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   border-bottom:2px solid transparent;
 }
 .nav-link:hover{background:rgba(255,255,255,0.1);color:#fff;}
-.nav-link.active{color:#FFD88A;border-bottom-color:#FFD88A;font-weight:600;}
+.nav-link.active{color:var(--gold-soft);border-bottom-color:var(--gold);font-weight:600;}
 .nav-link .arrow{font-size:0.6rem;opacity:0.7;}
 
 .dropdown{
@@ -105,7 +120,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 }
 .drop-link:last-child{border-bottom:none;}
 .drop-link:hover{background:var(--bg);color:var(--red);}
-.drop-link.active{color:var(--red);font-weight:600;background:#FFF5F5;}
+.drop-link.active{color:var(--red);font-weight:600;background:var(--gold-light);}
 
 /* hamburger */
 .nav-toggle{
@@ -126,32 +141,64 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .breadcrumb .sep{color:var(--border);}
 .breadcrumb .current{color:var(--text2);}
 
-/* ── PAGE HEADER ── */
+/* ── PAGE HEADER / MASTHEAD (Palm-leaf Manuscript) ── */
 .page-head{
-  background:var(--white);
-  border-bottom:1px solid var(--border);
+  background:
+    radial-gradient(ellipse at top, rgba(255,255,255,0.45), transparent 70%),
+    var(--gold-light);
+  border-bottom:2px double var(--red);
   padding:0;
   box-shadow:var(--shadow);
+  position:relative;
 }
-.page-head-inner{max-width:1400px;margin:0 auto;padding:20px 20px 0;}
+.masthead{
+  max-width:840px;margin:0 auto;
+  padding:38px 20px 26px;
+  text-align:center;
+}
+.masthead-crest{
+  width:64px;height:64px;object-fit:contain;
+  margin:0 auto 15px;display:block;
+}
+.masthead-eyebrow{
+  font-family:var(--serif-th);
+  font-size:0.82rem;font-weight:500;
+  letter-spacing:3px;color:var(--red);
+  text-transform:none;margin-bottom:9px;
+}
+.masthead-eyebrow::before{content:'\0E5B  ';color:var(--gold);}
+.masthead-eyebrow::after{content:'  \0E5B';color:var(--gold);}
+.masthead-rule{display:none;}
 .page-head h1{
-  font-size:1.35rem;font-weight:700;
-  color:var(--text);margin-bottom:4px;
+  font-family:var(--serif-th);
+  font-size:1.6rem;font-weight:600;letter-spacing:0.3px;
+  color:var(--red-dark);margin-bottom:5px;line-height:1.45;
   overflow-wrap:break-word;word-break:break-word;
 }
-.page-head p{
-  font-size:0.88rem;color:var(--text2);margin-bottom:16px;
-  overflow-wrap:break-word;word-break:break-word;
+.masthead-en{
+  font-family:var(--serif);font-style:italic;
+  font-size:1.2rem;color:var(--red);letter-spacing:0.5px;
 }
+.orn{display:flex;align-items:center;gap:12px;justify-content:center;max-width:300px;margin:16px auto 0;}
+.orn-line{flex:1;height:1px;background:var(--border);opacity:1;}
+.orn-line.l,.orn-line.r{background:var(--border);}
+.orn-dot{width:auto;height:auto;background:transparent;transform:none;flex-shrink:0;color:var(--gold);font-size:0.85rem;line-height:1;}
+.orn-dot::before{content:'\2756';}
+.masthead-sub{
+  font-family:var(--serif-th);
+  font-size:0.92rem;letter-spacing:0.5px;color:var(--text2);
+  margin:16px 0 18px;
+}
+.masthead-sub strong{color:var(--red);font-weight:600;}
 
 /* ── STAT PILLS ── */
-.stat-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.stat-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;justify-content:center;}
 .stat-pill{
   display:flex;align-items:center;gap:6px;
-  background:var(--bg);
+  background:var(--white);
   border:1px solid var(--border);
-  border-radius:40px;
-  padding:5px 14px;
+  border-radius:3px;
+  padding:6px 16px;
   font-size:0.8rem;color:var(--text2);
 }
 .stat-pill strong{color:var(--red);font-weight:700;}
@@ -175,7 +222,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   display:flex;align-items:center;
   background:var(--bg);
   border:1px solid var(--border);
-  border-radius:40px;
+  border-radius:5px;
   padding:0 14px;
   height:36px;
   min-width:220px;
@@ -192,7 +239,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   font-size:0.88rem;color:var(--text);
 }
 .search-wrap input::placeholder{color:var(--text3);}
-.search-wrap .s-icon{color:var(--text3);font-size:0.9rem;margin-right:6px;}
+.search-wrap .s-icon{color:var(--text3);display:flex;align-items:center;margin-right:7px;}
 .search-clear{
   background:none;border:none;cursor:pointer;
   color:var(--text3);font-size:0.9rem;display:none;padding:0 2px;
@@ -204,7 +251,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .filter-tab{
   white-space:nowrap;flex-shrink:0;
   padding:5px 14px;
-  border-radius:40px;
+  border-radius:4px;
   border:1px solid var(--border);
   background:transparent;
   font-family:'Sarabun',sans-serif;
@@ -216,7 +263,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .filter-tab.active{background:var(--red);border-color:var(--red);color:#fff;font-weight:600;}
 
 .country-sel{
-  border:1px solid var(--border);border-radius:40px;
+  border:1px solid var(--border);border-radius:4px;
   padding:5px 12px;
   font-family:'Sarabun',sans-serif;
   font-size:0.82rem;color:var(--text2);
@@ -246,9 +293,10 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   border:1px solid var(--border);
   border-radius:var(--radius);
   overflow:hidden;cursor:pointer;
-  transition:box-shadow 0.2s,border-color 0.2s,transform 0.15s;
+  transition:box-shadow 0.25s,border-color 0.2s,transform 0.2s;
   display:flex;flex-direction:column;
   opacity:0;
+  box-shadow:0 2px 6px rgba(61,44,23,0.07),0 1px 2px rgba(61,44,23,0.04);
 }
 .card.visible{animation:cardFadeUp 0.4s ease forwards;}
 @keyframes cardFadeUp{
@@ -256,33 +304,39 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   to{opacity:1;transform:translateY(0);}
 }
 .card:hover{
-  box-shadow:var(--shadow-md);
-  border-color:#bbb;
-  transform:translateY(-2px);
+  box-shadow:0 10px 32px rgba(61,44,23,0.16),0 3px 8px rgba(61,44,23,0.09);
+  border-color:var(--gold);
+  transform:translateY(-3px);
 }
-.card-top-bar{height:3px;}
-.z1 .card-top-bar{background:linear-gradient(90deg,#C9963A,#E0B860);}
-.z2 .card-top-bar{background:linear-gradient(90deg,#7B1A1A,#B5331A);}
-.z3 .card-top-bar{background:linear-gradient(90deg,#1A5FAB,#3A8BD1);}
-.z4 .card-top-bar{background:linear-gradient(90deg,#1A7A3C,#2EA854);}
+.card-top-bar{height:4px;background:var(--border);}
+.card.z1 .card-top-bar{background:var(--z1-color);}
+.card.z2 .card-top-bar{background:var(--z2-color);}
+.card.z3 .card-top-bar{background:var(--z3-color);}
+.card.z4 .card-top-bar{background:var(--z4-color);}
+.card.z1:hover{border-color:var(--z1-color);box-shadow:0 10px 32px rgba(26,63,111,0.18),0 3px 8px rgba(26,63,111,0.1);}
+.card.z2:hover{border-color:var(--z2-color);box-shadow:0 10px 32px rgba(27,94,53,0.18),0 3px 8px rgba(27,94,53,0.1);}
+.card.z3:hover{border-color:var(--z3-color);box-shadow:0 10px 32px rgba(74,31,120,0.18),0 3px 8px rgba(74,31,120,0.1);}
+.card.z4:hover{border-color:var(--z4-color);box-shadow:0 10px 32px rgba(124,28,28,0.18),0 3px 8px rgba(124,28,28,0.1);}
+.card-reg{display:none;}
 
 .card-body{padding:14px 16px 10px;flex:1;}
 .card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;}
 .card-titles{flex:1;}
-.card-name{font-size:0.97rem;font-weight:700;color:var(--text);line-height:1.35;}
-.card-name-en{font-size:0.72rem;color:var(--text3);margin-top:2px;}
+.card-name{font-family:var(--serif-th);font-size:0.97rem;font-weight:600;color:var(--text);line-height:1.4;}
+.card-name-en{font-family:var(--serif);font-style:italic;font-size:0.84rem;color:var(--text3);margin-top:1px;}
 .zone-tag{
-  flex-shrink:0;font-size:0.68rem;font-weight:700;
-  padding:2px 8px;border-radius:40px;white-space:nowrap;
+  flex-shrink:0;font-family:var(--serif-th);font-size:0.72rem;font-weight:500;letter-spacing:0.3px;
+  padding:2px 9px;border-radius:2px;white-space:nowrap;
+  background:var(--gold-light);color:var(--red-dark);border:1px solid var(--border);
 }
-.z1 .zone-tag{background:#FEF3C7;color:#92400E;}
-.z2 .zone-tag{background:#FEE8E4;color:#7B1A1A;}
-.z3 .zone-tag{background:#DBEAFE;color:#1E40AF;}
-.z4 .zone-tag{background:#D1FAE5;color:#065F46;}
+.card.z1 .zone-tag{background:#e8eef6;color:var(--z1-color);border-color:#b0c4de;}
+.card.z2 .zone-tag{background:#e8f4ed;color:var(--z2-color);border-color:#a8d5bb;}
+.card.z3 .zone-tag{background:#f0eaf8;color:var(--z3-color);border-color:#c8a8e8;}
+.card.z4 .zone-tag{background:#f8eaea;color:var(--z4-color);border-color:#e0b0b0;}
 
 .card-rows{display:flex;flex-direction:column;gap:5px;}
-.crow{display:flex;align-items:flex-start;gap:7px;font-size:0.82rem;color:var(--text2);}
-.crow-icon{flex-shrink:0;font-size:0.8rem;width:14px;text-align:center;margin-top:1px;}
+.crow{display:flex;align-items:flex-start;gap:8px;font-size:0.82rem;color:var(--text2);}
+.crow-icon{flex-shrink:0;width:16px;display:flex;align-items:center;justify-content:center;color:var(--gold);margin-top:1px;}
 
 .card-sep{height:1px;background:var(--border);margin:8px 16px;}
 .card-foot{
@@ -306,7 +360,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   grid-column:1/-1;text-align:center;
   padding:80px 24px;color:var(--text3);
 }
-.empty-icon{font-size:3rem;margin-bottom:14px;}
+.empty-icon{display:flex;justify-content:center;color:var(--text3);opacity:0.6;margin-bottom:14px;}
 .empty-title{font-size:1rem;font-weight:600;color:var(--text2);margin-bottom:4px;}
 
 /* ── MODAL ── */
@@ -322,23 +376,24 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 
 .modal{
   background:var(--white);
-  border-radius:12px;
+  border-radius:8px;
   max-width:580px;width:100%;
   max-height:90vh;overflow-y:auto;
-  box-shadow:0 20px 60px rgba(0,0,0,0.2);
+  box-shadow:0 24px 64px rgba(66,16,26,0.28);
   animation:slideUp 0.2s ease;
 }
 @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 .modal-header{
   background:var(--red);
-  padding:18px 20px 16px;
-  border-radius:12px 12px 0 0;
+  padding:20px 20px 18px;
+  border-radius:8px 8px 0 0;
+  border-bottom:2px solid var(--gold);
   position:relative;
   display:flex;align-items:flex-start;gap:14px;
 }
 .modal-icon-box{
-  width:44px;height:44px;border-radius:10px;
+  width:44px;height:44px;border-radius:6px;
   background:rgba(255,255,255,0.15);
   display:flex;align-items:center;justify-content:center;
   font-size:1.4rem;flex-shrink:0;
@@ -349,7 +404,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .modal-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
 .mbadge{
   font-size:0.7rem;font-weight:600;
-  padding:2px 10px;border-radius:40px;
+  padding:2px 10px;border-radius:3px;
   background:rgba(255,255,255,0.15);
   border:1px solid rgba(255,255,255,0.25);
   color:rgba(255,255,255,0.88);
@@ -386,7 +441,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .mv a{color:var(--red);text-decoration:none;}
 .mv a:hover{text-decoration:underline;}
 .ubosot-pill{
-  display:inline-block;padding:2px 10px;border-radius:40px;
+  display:inline-block;padding:2px 10px;border-radius:3px;
   font-size:0.78rem;font-weight:600;
 }
 .up-yes{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;}
@@ -394,8 +449,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 
 /* ── FOOTER ── */
 .site-footer{
-  background:var(--red-dark);color:rgba(255,255,255,0.65);
-  padding:28px 20px;
+  background:var(--red-dark);color:rgba(255,255,255,0.62);
+  padding:30px 20px;
+  border-top:2px solid var(--gold);
 }
 .footer-inner{
   max-width:1100px;margin:0 auto;
@@ -416,7 +472,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   color:rgba(255,255,255,0.72);text-decoration:none;
   margin-bottom:6px;transition:color 0.15s;
 }
-.footer-links a:hover{color:#FFD88A;}
+.footer-links a:hover{color:var(--gold-soft);}
 .footer-bottom{
   max-width:1100px;margin:16px auto 0;
   padding-top:16px;border-top:1px solid rgba(255,255,255,0.1);
@@ -574,8 +630,71 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 }
 @keyframes skelShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
 
+/* ── STATS BAND ── */
+.stats-band{
+  background:var(--red);
+  border-bottom:2px solid var(--gold);
+  box-shadow:0 4px 18px rgba(61,44,23,0.22);
+  position:relative;
+}
+.stats-band::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.18) 40%,rgba(255,255,255,0.22) 50%,rgba(255,255,255,0.18) 60%,transparent 100%);
+  pointer-events:none;
+}
+.stats-band-inner{
+  max-width:1400px;margin:0 auto;
+  display:flex;align-items:stretch;
+  padding:0 20px;
+}
+.stat-block{
+  flex:1;padding:24px 16px;
+  text-align:center;
+  border-right:1px solid rgba(255,255,255,0.1);
+  position:relative;
+}
+.stat-block:last-child{border-right:none;}
+.stat-num{
+  font-family:'Sarabun',sans-serif;
+  font-size:2.4rem;font-weight:700;
+  color:var(--gold-soft);
+  line-height:1;letter-spacing:-0.5px;
+  display:block;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 2px 10px rgba(0,0,0,0.28),0 1px 3px rgba(0,0,0,0.15);
+}
+.stat-unit{
+  font-size:1rem;font-weight:400;
+  margin-left:3px;opacity:0.8;
+}
+.stat-lbl{
+  font-size:0.75rem;
+  color:rgba(255,255,255,0.55);
+  margin-top:7px;
+  font-family:'Sarabun',sans-serif;
+  letter-spacing:0.5px;
+  text-transform:none;
+}
+.stat-block-accent{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:28px;height:2px;
+  background:var(--gold);
+  opacity:0;
+  transition:opacity 0.3s;
+}
+.stat-block:hover .stat-block-accent{opacity:1;}
+@media(max-width:640px){
+  .stats-band-inner{padding:0;flex-wrap:wrap;}
+  .stat-block{flex:1 1 50%;padding:16px 10px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.08);}
+  .stat-block:nth-child(odd){border-right:1px solid rgba(255,255,255,0.1);}
+  .stat-block:nth-child(3),.stat-block:nth-child(4){border-bottom:none;}
+  .stat-num{font-size:1.8rem;}
+  .stat-lbl{font-size:0.68rem;}
+}
+
 /* ── BADGE ใหม่ ── */
-.badge-new{display:inline-block;background:#2E7D32;color:#fff;font-size:0.63rem;font-weight:700;padding:1px 7px;border-radius:40px;margin-left:6px;vertical-align:middle;letter-spacing:0.3px;}
+.badge-new{display:inline-block;background:var(--gold);color:#fff;font-size:0.63rem;font-weight:700;padding:1px 7px;border-radius:3px;margin-left:6px;vertical-align:middle;letter-spacing:0.3px;}
 </style>
 </head>
 <body>
@@ -590,7 +709,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <nav class="navbar">
   <div class="nav-inner">
     <a class="nav-logo" href="https://www.utse.info/Home" target="_blank">
-      <img id="siteLogoImg" src="logo.png" alt="ส.ธ.ย. Logo" style="width:48px;height:48px;flex-shrink:0;object-fit:contain;filter:drop-shadow(0 0 2px rgba(255,255,255,0.3));" onerror="this.style.display='none'"/>
+      <img id="siteLogoImg" src="logo.png?v=6" alt="ส.ธ.ย. Logo" style="width:48px;height:48px;flex-shrink:0;object-fit:contain;filter:drop-shadow(0 0 2px rgba(255,255,255,0.3));" onerror="this.style.display='none'"/>
       <div class="nav-logo-text">
         <span class="nav-logo-th">สหภาพพระธรรมทูตไทยในทวีปยุโรป</span>
         <span class="nav-logo-en">The Union of Thai Sanghas in Europe (UTSE.)</span>
@@ -659,13 +778,37 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- PAGE HEADER -->
 <div class="page-head">
-  <div class="page-head-inner">
+  <div class="masthead">
+    <img class="masthead-crest" src="logo.png?v=6" alt="ตราสัญลักษณ์ ส.ธ.ย." onerror="this.style.display='none'">
+    <div class="masthead-eyebrow">ทะเบียนอย่างเป็นทางการ</div>
     <h1>วัดสมาชิก สหภาพพระธรรมทูตไทยในทวีปยุโรป</h1>
-    <p>ทะเบียนวัดสมาชิก ส.ธ.ย. ทั้ง ๔ เขต ในทวีปยุโรป — อัพเดทปี พ.ศ. <span id="updateYearSpan">๒๕๖๘</span></p>
-    <div class="stat-row">
-      <div class="stat-pill">วัดสมาชิกทั้งหมด <strong id="statTotal">—</strong></div>
-      <div class="stat-pill">แบ่งเป็น <strong>4 เขต</strong></div>
-      <div class="stat-pill">ครอบคลุม <strong id="statCountries">—</strong></div>
+    <div class="masthead-en">The Union of Thai Sanghas in Europe</div>
+    <div class="orn">
+      <span class="orn-line l"></span>
+      <span class="orn-dot"></span>
+      <span class="orn-line r"></span>
+    </div>
+    <p class="masthead-sub">ทะเบียนวัดสมาชิกทั้ง <strong>๔ เขต</strong> ในทวีปยุโรป · จัดทำ พ.ศ. <span id="updateYearSpan">๒๕๖๘</span></p>
+  </div>
+</div>
+
+<!-- STATS BAND -->
+<div class="stats-band">
+  <div class="stats-band-inner">
+    <div class="stat-block">
+      <span class="stat-num" id="sNumTotal">—</span>
+      <div class="stat-lbl">วัดสมาชิกทั้งหมด</div>
+      <div class="stat-block-accent"></div>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num">4</span>
+      <div class="stat-lbl">เขตบริหาร ส.ธ.ย.</div>
+      <div class="stat-block-accent"></div>
+    </div>
+    <div class="stat-block">
+      <span class="stat-num" id="sNumCountries">—</span>
+      <div class="stat-lbl">ประเทศในทวีปยุโรป</div>
+      <div class="stat-block-accent"></div>
     </div>
   </div>
 </div>
@@ -674,7 +817,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div class="filter-bar">
   <div class="filter-inner">
     <div class="search-wrap">
-      <span class="s-icon">🔍</span>
+      <span class="s-icon"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="4.3"/><path d="M13.6 13.6 10.3 10.3"/></svg></span>
       <input id="searchInput" type="text" placeholder="ค้นหาชื่อวัด เจ้าอาวาส ที่อยู่...">
       <button class="search-clear" id="searchClear">✕</button>
     </div>
@@ -685,7 +828,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     <button class="filter-tab" data-zone="3">เขต ๓</button>
     <button class="filter-tab" data-zone="4">เขต ๔</button>
     <div class="f-divider"></div>
-    <select class="country-sel" id="countryFilter"><option value="">🌍 ทุกประเทศ</option></select>
+    <select class="country-sel" id="countryFilter"><option value="">ทุกประเทศ</option></select>
     <span class="result-info" id="resultInfo"></span>
   </div>
 </div>
@@ -745,7 +888,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
         สำนักงาน: วัดศรีนครินทรวราราม<br>
         Im Grund 7, 5014 Gretzenbach<br>
         Solothurn, Switzerland<br>
-        📧 <a href="mailto:utse2003@gmail.com" style="color:rgba(255,255,255,0.72);text-decoration:none;">utse2003@gmail.com</a>
+        📧 <a href="/cdn-cgi/l/email-protection#453031362077757576052228242c296b262a28" style="color:rgba(255,255,255,0.72);text-decoration:none;"><span class="__cf_email__" data-cfemail="b0c5c4c3d582808083f0d7ddd1d9dc9ed3dfdd">[email&#160;protected]</span></a>
       </div>
     </div>
     <div class="footer-links">
@@ -761,7 +904,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   <div class="footer-bottom" style="position:relative;">
     <p>Copyright © 2026 utse.info · สงวนลิขสิทธิ์</p>
     <div class="social-links">
-      <a href="mailto:utse2003@gmail.com" title="Email">📧</a>
+      <a href="/cdn-cgi/l/email-protection#80f5f4f3e5b2b0b0b3c0e7ede1e9ecaee3efed" title="Email">📧</a>
       <a href="https://www.facebook.com/สหภาพพระธรรมทูตไทยในทวีปยุโรป-772744446171296" target="_blank" title="Facebook">📘</a>
       <a href="https://www.youtube.com/@utse1607" target="_blank" title="YouTube">📺</a>
     </div>
@@ -769,7 +912,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 </footer>
 <!-- admin trigger -->
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ── Supabase ──────────────────────────────────────────────────
 const SUPABASE_URL = 'https://yvpsqxtpmhxuwynpmxnv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_aftnDkZTFaxlnLuSla8G1g_0kXcsFjt';
@@ -830,14 +973,26 @@ function linkify(text) {
 // ── Temple SVG icon (แทน emoji 🕌 ให้เหมือนกันทุก OS) ─────────
 function templeIcon(size=28){
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 40 40" aria-hidden="true">
-    <line x1="20" y1="2" x2="20" y2="8" stroke="#5a7a2e" stroke-width="2" stroke-linecap="round"/>
-    <ellipse cx="20" cy="10" rx="3" ry="2.5" fill="#5a7a2e"/>
-    <path d="M10 18 Q20 10 30 18Z" fill="#4a7c2f"/>
-    <rect x="9" y="17.5" width="22" height="2.5" rx="1" fill="#3d6b26"/>
-    <rect x="13" y="20" width="14" height="12" rx="1" fill="#4a7c2f"/>
-    <rect x="17" y="22" width="6" height="10" rx="1" fill="#2d5219"/>
-    <rect x="8" y="32" width="24" height="3" rx="1" fill="#3d6b26"/>
+    <line x1="20" y1="2" x2="20" y2="8" stroke="#9E7B33" stroke-width="2" stroke-linecap="round"/>
+    <ellipse cx="20" cy="10" rx="3" ry="2.5" fill="#9E7B33"/>
+    <path d="M10 18 Q20 10 30 18Z" fill="#5A4327"/>
+    <rect x="9" y="17.5" width="22" height="2.5" rx="1" fill="#9E7B33"/>
+    <rect x="13" y="20" width="14" height="12" rx="1" fill="#5A4327"/>
+    <rect x="17" y="22" width="6" height="10" rx="1" fill="#3D2C17"/>
+    <rect x="8" y="32" width="24" height="3" rx="1" fill="#9E7B33"/>
   </svg>`;
+}
+
+// ── Line icons (currentColor stroke) — แทน emoji ให้ดูเป็นทางการ ──
+const ICONS = {
+  user:'<circle cx="8" cy="5" r="2.7"/><path d="M13 14v-1.3a2.7 2.7 0 0 0-2.7-2.7H5.7A2.7 2.7 0 0 0 3 12.7V14"/>',
+  pin:'<path d="M13 6.7c0 3.5-5 8.6-5 8.6s-5-5.1-5-8.6a5 5 0 0 1 10 0z"/><circle cx="8" cy="6.7" r="1.7"/>',
+  phone:'<path d="M13.5 11.3v2a1 1 0 0 1-1.1 1 11 11 0 0 1-4.8-1.7 10.8 10.8 0 0 1-3.3-3.3A11 11 0 0 1 2.6 4.5a1 1 0 0 1 1-1.1h2a1 1 0 0 1 1 .9c.1.6.3 1.3.5 1.9a1 1 0 0 1-.2 1l-.9.9a8.5 8.5 0 0 0 3.3 3.3l.9-.9a1 1 0 0 1 1-.2c.6.2 1.2.4 1.9.5a1 1 0 0 1 .9 1z"/>',
+  users:'<circle cx="6.2" cy="5.2" r="2.5"/><path d="M2.3 14v-1.2A2.6 2.6 0 0 1 4.9 10.2h2.6a2.6 2.6 0 0 1 2.6 2.6V14"/><path d="M11 3a2.5 2.5 0 0 1 0 4.8"/><path d="M13.7 14v-1.2a2.6 2.6 0 0 0-2-2.5"/>',
+  search:'<circle cx="7" cy="7" r="4.3"/><path d="M13.6 13.6 10.3 10.3"/>'
+};
+function lineIcon(name,size=15){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]||''}</svg>`;
 }
 
 // ── Load site settings ────────────────────────────────────────
@@ -848,6 +1003,8 @@ async function loadSiteSettings() {
       data.forEach(r => { _siteSettings[r.key] = r.value; });
       if (_siteSettings.update_year) {
         document.getElementById('updateYearSpan').textContent = _siteSettings.update_year;
+        var yrEl = document.getElementById('sNumYear');
+        if (yrEl) yrEl.textContent = _siteSettings.update_year;
       }
       if (_siteSettings.site_logo_url) {
         document.getElementById('siteLogoImg').src = _siteSettings.site_logo_url;
@@ -891,6 +1048,8 @@ async function saveSiteSettings() {
   if (yearErr) { document.getElementById('siteSettingsErr').textContent = 'บันทึกปีไม่สำเร็จ: ' + yearErr.message; return; }
   _siteSettings.update_year = year;
   document.getElementById('updateYearSpan').textContent = year;
+  var yrEl2 = document.getElementById('sNumYear');
+  if (yrEl2) yrEl2.textContent = year;
 
   // อัปโหลดโลโก้ถ้ามีการเลือกไฟล์
   if (_logoFile) {
@@ -908,6 +1067,21 @@ async function saveSiteSettings() {
   showToast('บันทึกตั้งค่าเรียบร้อยแล้ว', 'success');
 }
 
+// ── Animated counter ────────────────────────────────────────
+function animateCounter(el, target, duration) {
+  duration = duration || 1200;
+  var startVal = parseInt(el.textContent) || 0;
+  var startTime = performance.now();
+  function update(now) {
+    var elapsed = now - startTime;
+    var progress = Math.min(elapsed / duration, 1);
+    var ease = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(startVal + ease * (target - startVal));
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
 // ── Load temples from Supabase ────────────────────────────────
 async function loadTemples() {
   const skeletonCard = `<div class="skeleton-card"><div class="skel-top"></div><div class="skel-body"><div class="skel-head"><div class="skel-circle"></div><div class="skel-lines"><div class="skel-line"></div><div class="skel-line s"></div></div></div><div class="skel-rows"><div class="skel-row"></div><div class="skel-row m"></div><div class="skel-row s"></div></div></div><div class="skel-sep"></div><div class="skel-foot"><div class="skel-foot-l"></div><div class="skel-foot-r"></div></div></div>`;
@@ -915,10 +1089,12 @@ async function loadTemples() {
   const { data, error } = await _sb.from('temples').select('*').order('zone_num').order('country').order('id');
   if (error) { console.error(error); return; }
   TEMPLES = data;
-  // อัปเดตสถิติจากข้อมูลจริง
-  document.getElementById('statTotal').textContent = TEMPLES.length + ' แห่ง';
+  // อัปเดตสถิติพร้อม animated counter
   const countries=[...new Set(TEMPLES.map(t=>t.country).filter(Boolean))].sort();
-  document.getElementById('statCountries').textContent = countries.length + ' ประเทศ';
+  const elTotal = document.getElementById('sNumTotal');
+  const elCountries = document.getElementById('sNumCountries');
+  if (elTotal) animateCounter(elTotal, TEMPLES.length, 1200);
+  if (elCountries) animateCounter(elCountries, countries.length, 1000);
   const cSel=document.getElementById('countryFilter');
   cSel.innerHTML='<option value="">ทุกประเทศ</option>';
   countries.forEach(c=>{
@@ -973,7 +1149,7 @@ function render(){
 
   const grid=document.getElementById('grid');
   if(!list.length){
-    grid.innerHTML=`<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">ไม่พบวัดที่ตรงกัน</div><p>ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p></div>`;
+    grid.innerHTML=`<div class="empty"><div class="empty-icon">${lineIcon('search',46)}</div><div class="empty-title">ไม่พบวัดที่ตรงกัน</div><p>ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p></div>`;
     return;
   }
 
@@ -995,10 +1171,10 @@ function render(){
           ${zn?`<span class="zone-tag">${ZONE_LABEL[zn]||''}</span>`:''}
         </div>
         <div class="card-rows">
-          ${t.abbot?`<div class="crow"><span class="crow-icon">🧘</span><span>เจ้าอาวาส: ${esc(t.abbot)}</span></div>`:''}
-          ${t.address?`<div class="crow"><span class="crow-icon">📍</span><span>${esc(t.address)}</span></div>`:''}
-          ${t.phone?`<div class="crow"><span class="crow-icon">📞</span><span>${esc(t.phone)}</span></div>`:''}
-          ${t.monks?`<div class="crow"><span class="crow-icon">🙏</span><span>พระในพรรษา ${esc(t.monks)}</span></div>`:''}
+          ${t.abbot?`<div class="crow"><span class="crow-icon">${lineIcon('user')}</span><span>เจ้าอาวาส: ${esc(t.abbot)}</span></div>`:''}
+          ${t.address?`<div class="crow"><span class="crow-icon">${lineIcon('pin')}</span><span>${esc(t.address)}</span></div>`:''}
+          ${t.phone?`<div class="crow"><span class="crow-icon">${lineIcon('phone')}</span><span>${esc(t.phone)}</span></div>`:''}
+          ${t.monks?`<div class="crow"><span class="crow-icon">${lineIcon('users')}</span><span>พระในพรรษา ${esc(t.monks)}</span></div>`:''}
         </div>
       </div>
       <div class="card-sep"></div>
@@ -1049,7 +1225,7 @@ function openModal(id){
     ]],
     ['สถานที่และทรัพย์สิน',[
       ['ที่อยู่',esc(t.address)],
-      ['แผนที่',t.address?`<a href="https://maps.google.com/?q=${encodeURIComponent((t.name_th||t.org_th||"")+" "+t.address)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#E8F5E9;color:#2E7D32;border:1px solid #A5D6A7;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;text-decoration:none;">📍 เปิด Google Maps</a>`:''],
+      ['แผนที่',t.address?`<a href="https://maps.google.com/?q=${encodeURIComponent((t.name_th||t.org_th||"")+" "+t.address)}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--gold-light);color:var(--red);border:1px solid rgba(169,134,63,0.45);border-radius:4px;padding:5px 11px;font-size:0.82rem;font-weight:600;text-decoration:none;">${lineIcon('pin',13)} เปิด Google Maps</a>`:''],
       ['สถานะที่ดิน/อาคาร',esc(t.land_status)],
       ['อุโบสถ/พัทธสีมา',ubosotHtml],
     ]],
@@ -1338,7 +1514,8 @@ async function deleteTemple() {
   TEMPLES = TEMPLES.filter(x => x.id !== id);
   logChange('delete', id, name, 'ลบวัดออกจากระบบ');
   // อัปเดตสถิติ
-  document.getElementById('statTotal').textContent = TEMPLES.length + ' แห่ง';
+  var elT = document.getElementById('sNumTotal');
+  if (elT) animateCounter(elT, TEMPLES.length, 600);
   closeEdit();
   render();
   showToast('ลบวัดเรียบร้อยแล้ว', 'success');
@@ -2586,7 +2763,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     <div class="form-row" style="margin-bottom:18px;">
       <label style="display:block;font-weight:600;margin-bottom:8px;">โลโก้องค์กร</label>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
-        <img id="sLogoPreview" src="logo.png" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:#f5f5f5;">
+        <img id="sLogoPreview" src="logo.png?v=2" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:#f5f5f5;">
         <div style="font-size:0.82rem;color:var(--text2);">โลโก้ปัจจุบัน<br>คลิกด้านล่างเพื่อเปลี่ยน</div>
       </div>
       <div class="upload-area" onclick="document.getElementById('sLogoFile').click()" style="padding:14px;text-align:center;cursor:pointer;">
