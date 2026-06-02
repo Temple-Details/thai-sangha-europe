@@ -710,15 +710,26 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .badge-new{display:inline-block;background:var(--gold);color:#fff;font-size:0.63rem;font-weight:700;padding:1px 7px;border-radius:3px;margin-left:6px;vertical-align:middle;letter-spacing:0.3px;}
 
 /* ── FLIP COUNTER ── */
-.flip-counter{display:flex;gap:3px;align-items:center;justify-content:center;perspective:400px;min-height:44px;}
-.flip-digit{position:relative;width:36px;height:48px;background:rgba(0,0,0,0.25);border-radius:5px;border:1px solid rgba(158,123,51,0.3);overflow:hidden;flex-shrink:0;}
-.flip-digit::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,0.4);z-index:10;}
-.fd-top,.fd-bot{position:absolute;width:100%;height:50%;display:flex;align-items:flex-end;justify-content:center;font-size:1.7rem;font-weight:700;color:var(--gold-soft);line-height:1;overflow:hidden;font-variant-numeric:tabular-nums;}
-.fd-top{top:0;padding-bottom:1px;background:rgba(0,0,0,0.15);border-radius:5px 5px 0 0;}
-.fd-bot{bottom:0;align-items:flex-start;padding-top:1px;background:rgba(0,0,0,0.05);border-radius:0 0 5px 5px;}
-.fd-flap{position:absolute;width:100%;height:50%;top:0;transform-origin:bottom center;backface-visibility:hidden;display:flex;align-items:flex-end;justify-content:center;font-size:1.7rem;font-weight:700;color:var(--gold-soft);padding-bottom:1px;background:rgba(0,0,0,0.15);border-radius:5px 5px 0 0;z-index:5;}
-.fd-flap.go{animation:fdFlap .16s ease-in forwards;}
-@keyframes fdFlap{0%{transform:rotateX(0deg);}100%{transform:rotateX(-90deg);}}
+.flip-counter{display:flex;gap:4px;align-items:center;justify-content:center;min-height:44px;perspective:400px;}
+.flip-digit{
+  width:34px;height:46px;
+  background:rgba(0,0,0,0.28);
+  border-radius:5px;
+  border:1px solid rgba(158,123,51,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.75rem;font-weight:700;
+  color:var(--gold-soft);
+  font-variant-numeric:tabular-nums;
+  flex-shrink:0;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.05),0 2px 6px rgba(0,0,0,0.3);
+}
+.flip-digit.go{animation:fdFlip .22s ease-in-out;}
+@keyframes fdFlip{
+  0%  {transform:rotateX(0deg);   opacity:1;}
+  45% {transform:rotateX(90deg);  opacity:0;}
+  55% {transform:rotateX(-90deg); opacity:0;}
+  100%{transform:rotateX(0deg);   opacity:1;}
+}
 
 /* ── PARALLAX HERO ── */
 .page-head{perspective:1px;transform-style:preserve-3d;}
@@ -1115,22 +1126,18 @@ function _buildFlipDigits(el, numDigits) {
   return Array.from({length: numDigits}, () => {
     const w = document.createElement('div');
     w.className = 'flip-digit';
-    w.innerHTML = '<div class="fd-top">0</div><div class="fd-bot">0</div><div class="fd-flap">0</div>';
+    w.textContent = '0';
     el.appendChild(w);
     return w;
   });
 }
 function _flipDigitTo(dEl, ch) {
   return new Promise(res => {
-    const top  = dEl.querySelector('.fd-top');
-    const bot  = dEl.querySelector('.fd-bot');
-    const flap = dEl.querySelector('.fd-flap');
-    flap.textContent = top.textContent;
-    top.textContent  = ch;
-    flap.classList.remove('go');
-    void flap.offsetWidth;
-    flap.classList.add('go');
-    setTimeout(() => { bot.textContent = ch; res(); }, 160);
+    if (dEl.textContent === ch) { res(); return; }
+    dEl.classList.remove('go');
+    void dEl.offsetWidth;
+    dEl.classList.add('go');
+    setTimeout(() => { dEl.textContent = ch; res(); }, 110);
   });
 }
 async function animateCounter(el, target, totalMs) {
@@ -1142,11 +1149,11 @@ async function animateCounter(el, target, totalMs) {
     const s = String(v).padStart(str.length, '0');
     const ps = [];
     for (let i = 0; i < s.length; i++) {
-      if (digits[i].querySelector('.fd-top').textContent !== s[i])
+      if (digits[i].textContent !== s[i])
         ps.push(_flipDigitTo(digits[i], s[i]));
     }
     await Promise.all(ps);
-    if (v < target) await new Promise(r => setTimeout(r, Math.max(delay - 160, 10)));
+    if (v < target) await new Promise(r => setTimeout(r, Math.max(delay - 110, 10)));
   }
 }
 
