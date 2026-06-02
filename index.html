@@ -366,13 +366,14 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 /* ── MODAL ── */
 .overlay{
   display:none;position:fixed;inset:0;
-  background:rgba(0,0,0,0.45);
+  background:rgba(0,0,0,0);
   z-index:400;
   align-items:center;justify-content:center;
   padding:20px;
+  transition:background 0.25s;
 }
-.overlay.open{display:flex;animation:fadeIn 0.18s;}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.overlay.open{display:flex;}
+.overlay.ready{background:rgba(0,0,0,0.45);}
 
 .modal{
   background:var(--white);
@@ -380,9 +381,19 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   max-width:580px;width:100%;
   max-height:90vh;overflow-y:auto;
   box-shadow:0 24px 64px rgba(66,16,26,0.28);
-  animation:slideUp 0.2s ease;
+  opacity:0;
+  transform:translateY(-60px) scale(0.9);
+  transition:opacity 0.25s ease, transform 0.45s cubic-bezier(0.34,1.56,0.64,1);
 }
-@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.overlay.ready .modal{
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
+.overlay.closing .modal{
+  opacity:0;
+  transform:translateY(40px) scale(0.92);
+  transition:opacity 0.18s ease, transform 0.2s ease;
+}
 
 .modal-header{
   background:var(--red);
@@ -519,7 +530,9 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 
 /* ── LOGO ── */
 .card-logo{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--border);background:#f0f0f0;flex-shrink:0;}
-.card-logo-ph{width:56px;height:56px;border-radius:50%;background:var(--gold-light);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.card-logo-ph{width:56px;height:56px;border-radius:50%;background:var(--gold-light);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;perspective:300px;}
+.card-logo-ph svg{transition:transform 0.6s cubic-bezier(0.34,1.56,0.64,1);will-change:transform;}
+.card:hover .card-logo-ph svg{transform:rotateY(360deg);}
 .modal-logo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);background:#f0f0f0;}
 .modal-logo-ph{width:72px;height:72px;border-radius:50%;background:var(--gold-light);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:2rem;}
 
@@ -695,6 +708,28 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 
 /* ── BADGE ใหม่ ── */
 .badge-new{display:inline-block;background:var(--gold);color:#fff;font-size:0.63rem;font-weight:700;padding:1px 7px;border-radius:3px;margin-left:6px;vertical-align:middle;letter-spacing:0.3px;}
+
+/* ── FLIP COUNTER ── */
+.flip-counter{display:flex;gap:3px;align-items:center;justify-content:center;perspective:400px;min-height:44px;}
+.flip-digit{position:relative;width:36px;height:48px;background:rgba(0,0,0,0.25);border-radius:5px;border:1px solid rgba(158,123,51,0.3);overflow:hidden;flex-shrink:0;}
+.flip-digit::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,0.4);z-index:10;}
+.fd-top,.fd-bot{position:absolute;width:100%;height:50%;display:flex;align-items:flex-end;justify-content:center;font-size:1.7rem;font-weight:700;color:var(--gold-soft);line-height:1;overflow:hidden;font-variant-numeric:tabular-nums;}
+.fd-top{top:0;padding-bottom:1px;background:rgba(0,0,0,0.15);border-radius:5px 5px 0 0;}
+.fd-bot{bottom:0;align-items:flex-start;padding-top:1px;background:rgba(0,0,0,0.05);border-radius:0 0 5px 5px;}
+.fd-flap{position:absolute;width:100%;height:50%;top:0;transform-origin:bottom center;backface-visibility:hidden;display:flex;align-items:flex-end;justify-content:center;font-size:1.7rem;font-weight:700;color:var(--gold-soft);padding-bottom:1px;background:rgba(0,0,0,0.15);border-radius:5px 5px 0 0;z-index:5;}
+.fd-flap.go{animation:fdFlap .16s ease-in forwards;}
+@keyframes fdFlap{0%{transform:rotateX(0deg);}100%{transform:rotateX(-90deg);}}
+
+/* ── PARALLAX HERO ── */
+.page-head{perspective:1px;transform-style:preserve-3d;}
+.ph-layer{position:absolute;inset:-60px;will-change:transform;pointer-events:none;}
+.ph-orbs{position:absolute;inset:0;}
+.ph-orb{position:absolute;border-radius:50%;filter:blur(55px);opacity:0.18;}
+.ph-orb-1{width:260px;height:260px;background:var(--gold);top:5%;left:10%;}
+.ph-orb-2{width:180px;height:180px;background:var(--red-dark);top:30%;right:15%;}
+.ph-orb-3{width:130px;height:130px;background:var(--gold-soft);bottom:5%;left:45%;}
+.masthead-crest{animation:phFloat 3.5s ease-in-out infinite;will-change:transform;}
+@keyframes phFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
 </style>
 </head>
 <body>
@@ -777,8 +812,15 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 </div>
 
 <!-- PAGE HEADER -->
-<div class="page-head">
-  <div class="masthead">
+<div class="page-head" id="pageHead">
+  <div class="ph-layer" id="phLayerOrbs">
+    <div class="ph-orbs">
+      <div class="ph-orb ph-orb-1"></div>
+      <div class="ph-orb ph-orb-2"></div>
+      <div class="ph-orb ph-orb-3"></div>
+    </div>
+  </div>
+  <div class="masthead" id="phContent">
     <img class="masthead-crest" src="logo.png?v=6" alt="ตราสัญลักษณ์ ส.ธ.ย." onerror="this.style.display='none'">
     <div class="masthead-eyebrow">ทะเบียนอย่างเป็นทางการ</div>
     <h1>วัดสมาชิก สหภาพพระธรรมทูตไทยในทวีปยุโรป</h1>
@@ -796,17 +838,17 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 <div class="stats-band">
   <div class="stats-band-inner">
     <div class="stat-block">
-      <span class="stat-num" id="sNumTotal">—</span>
+      <div class="flip-counter" id="sNumTotal"></div>
       <div class="stat-lbl">วัดสมาชิกทั้งหมด</div>
       <div class="stat-block-accent"></div>
     </div>
     <div class="stat-block">
-      <span class="stat-num">4</span>
+      <div class="flip-counter" id="sNumZones"></div>
       <div class="stat-lbl">เขตบริหาร ส.ธ.ย.</div>
       <div class="stat-block-accent"></div>
     </div>
     <div class="stat-block">
-      <span class="stat-num" id="sNumCountries">—</span>
+      <div class="flip-counter" id="sNumCountries"></div>
       <div class="stat-lbl">ประเทศในทวีปยุโรป</div>
       <div class="stat-block-accent"></div>
     </div>
@@ -1067,20 +1109,63 @@ async function saveSiteSettings() {
   showToast('บันทึกตั้งค่าเรียบร้อยแล้ว', 'success');
 }
 
-// ── Animated counter ────────────────────────────────────────
-function animateCounter(el, target, duration) {
-  duration = duration || 1200;
-  var startVal = parseInt(el.textContent) || 0;
-  var startTime = performance.now();
-  function update(now) {
-    var elapsed = now - startTime;
-    var progress = Math.min(elapsed / duration, 1);
-    var ease = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(startVal + ease * (target - startVal));
-    if (progress < 1) requestAnimationFrame(update);
-  }
-  requestAnimationFrame(update);
+// ── Flip Counter ─────────────────────────────────────────────
+function _buildFlipDigits(el, numDigits) {
+  el.innerHTML = '';
+  return Array.from({length: numDigits}, () => {
+    const w = document.createElement('div');
+    w.className = 'flip-digit';
+    w.innerHTML = '<div class="fd-top">0</div><div class="fd-bot">0</div><div class="fd-flap">0</div>';
+    el.appendChild(w);
+    return w;
+  });
 }
+function _flipDigitTo(dEl, ch) {
+  return new Promise(res => {
+    const top  = dEl.querySelector('.fd-top');
+    const bot  = dEl.querySelector('.fd-bot');
+    const flap = dEl.querySelector('.fd-flap');
+    flap.textContent = top.textContent;
+    top.textContent  = ch;
+    flap.classList.remove('go');
+    void flap.offsetWidth;
+    flap.classList.add('go');
+    setTimeout(() => { bot.textContent = ch; res(); }, 160);
+  });
+}
+async function animateCounter(el, target, totalMs) {
+  if (!el) return;
+  const str    = String(target);
+  const digits = _buildFlipDigits(el, str.length);
+  const delay  = Math.max((totalMs || 1200) / target, 22);
+  for (let v = 1; v <= target; v++) {
+    const s = String(v).padStart(str.length, '0');
+    const ps = [];
+    for (let i = 0; i < s.length; i++) {
+      if (digits[i].querySelector('.fd-top').textContent !== s[i])
+        ps.push(_flipDigitTo(digits[i], s[i]));
+    }
+    await Promise.all(ps);
+    if (v < target) await new Promise(r => setTimeout(r, Math.max(delay - 160, 10)));
+  }
+}
+
+// ── Parallax Hero ─────────────────────────────────────────────
+(function() {
+  var pageHead = document.getElementById('pageHead');
+  var layerOrbs = document.getElementById('phLayerOrbs');
+  var content = document.getElementById('phContent');
+  function onScroll() {
+    if (!pageHead) return;
+    var sy = window.scrollY;
+    var hh = pageHead.offsetHeight;
+    var p  = Math.min(sy / (hh || 1), 1);
+    if (layerOrbs) layerOrbs.style.transform = 'translateY(' + (sy * 0.3) + 'px)';
+    if (content)   content.style.transform   = 'translateY(' + (sy * 0.55) + 'px)';
+    if (content)   content.style.opacity     = Math.max(1 - p * 1.6, 0);
+  }
+  window.addEventListener('scroll', onScroll, {passive: true});
+})();
 
 // ── Load temples from Supabase ────────────────────────────────
 async function loadTemples() {
@@ -1093,8 +1178,10 @@ async function loadTemples() {
   const countries=[...new Set(TEMPLES.map(t=>t.country).filter(Boolean))].sort();
   const elTotal = document.getElementById('sNumTotal');
   const elCountries = document.getElementById('sNumCountries');
+  const elZones = document.getElementById('sNumZones');
   if (elTotal) animateCounter(elTotal, TEMPLES.length, 1200);
   if (elCountries) animateCounter(elCountries, countries.length, 1000);
+  if (elZones) animateCounter(elZones, 4, 500);
   const cSel=document.getElementById('countryFilter');
   cSel.innerHTML='<option value="">ทุกประเทศ</option>';
   countries.forEach(c=>{
@@ -1245,13 +1332,22 @@ function openModal(id){
     `).join('')}
   `).join('');
 
-  document.getElementById('overlay').classList.add('open');
-  document.body.style.overflow='hidden';
+  const ov = document.getElementById('overlay');
+  ov.style.display = 'flex';
+  ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('ready')));
 }
 
 function closeModal(){
-  document.getElementById('overlay').classList.remove('open');
-  document.body.style.overflow='';
+  const ov = document.getElementById('overlay');
+  ov.classList.remove('ready');
+  ov.classList.add('closing');
+  setTimeout(() => {
+    ov.classList.remove('open','closing');
+    ov.style.display = 'none';
+    document.body.style.overflow = '';
+  }, 220);
 }
 
 document.getElementById('modalClose').addEventListener('click',closeModal);
