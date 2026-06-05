@@ -129,6 +129,34 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   margin-left:auto;
 }
 
+/* ── MOBILE DROPDOWN ── */
+@media(max-width:640px){
+  .nav-item .dropdown{
+    position:static;
+    display:none;
+    box-shadow:none;
+    border-radius:0;
+    border:none;
+    border-top:1px solid rgba(255,255,255,0.08);
+    background:rgba(0,0,0,0.18);
+    min-width:auto;
+  }
+  .nav-item.open .dropdown{display:block;}
+  .drop-link{
+    color:rgba(255,255,255,0.8);
+    padding:10px 32px;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    background:transparent;
+  }
+  .drop-link:hover,.drop-link:active{background:rgba(255,255,255,0.08);color:#fff;}
+  .drop-link.active{background:rgba(255,255,255,0.08);color:var(--gold-soft);font-weight:600;}
+  .nav-link .arrow{
+    display:inline-block;
+    transition:transform 0.2s;
+  }
+  .nav-item.open .nav-link .arrow{transform:rotate(180deg);}
+}
+
 /* ── BREADCRUMB ── */
 .breadcrumb{
   max-width:1400px;margin:0 auto;
@@ -508,6 +536,28 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   min-height:22px;
 }
 
+/* ── FILTER SCROLL HINT + RESULT INFO (mobile) ── */
+@media(max-width:768px){
+  .filter-bar{position:relative;}
+  /* gradient fade ซ้ายของ result-info */
+  .filter-bar::after{
+    content:'';position:absolute;right:0;top:0;bottom:0;width:80px;
+    background:linear-gradient(to right,transparent,var(--white) 40%);
+    pointer-events:none;z-index:1;
+  }
+  /* result-info ลอยขวา ทับบน gradient */
+  .result-info{
+    position:absolute;right:8px;top:50%;
+    transform:translateY(-50%);
+    background:var(--white);
+    padding:2px 6px;
+    border-left:1px solid var(--border);
+    border-radius:3px;
+    z-index:2;
+    margin-left:0;
+  }
+}
+
 /* ── MOBILE ── */
 @media(max-width:640px){
   .nav-links,.footer-inner{display:none;}
@@ -589,7 +639,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 .upload-area:hover{border-color:var(--gold);color:var(--gold);}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%) translateY(20px);
+.toast{position:fixed;bottom:var(--toast-bottom,70px);left:50%;transform:translateX(-50%) translateY(20px);
   background:#222;color:#fff;padding:10px 22px;border-radius:8px;font-size:0.87rem;
   opacity:0;transition:all 0.3s;z-index:600;pointer-events:none;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -702,6 +752,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   .stat-block{flex:1 1 50%;padding:16px 10px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.08);}
   .stat-block:nth-child(odd){border-right:1px solid rgba(255,255,255,0.1);}
   .stat-block:nth-child(3),.stat-block:nth-child(4){border-bottom:none;}
+  .stat-block:nth-child(odd):last-child{border-right:none;}
   .stat-num{font-size:1.8rem;}
   .stat-lbl{font-size:0.68rem;}
 }
@@ -732,7 +783,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 }
 
 /* ── PARALLAX HERO ── */
-.page-head{perspective:1px;transform-style:preserve-3d;}
+.page-head{overflow:hidden;}
 .ph-layer{position:absolute;inset:-60px;will-change:transform;pointer-events:none;}
 .ph-orbs{position:absolute;inset:0;}
 .ph-orb{position:absolute;border-radius:50%;filter:blur(55px);opacity:0.07;}
@@ -917,7 +968,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 </main>
 
 <!-- MODAL -->
-<div class="overlay" id="overlay">
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="mName">
   <div class="modal">
     <div class="modal-header">
       <div id="mLogo"></div>
@@ -1161,8 +1212,9 @@ async function animateCounter(el, target, totalMs) {
   }
 }
 
-// ── Parallax Hero ─────────────────────────────────────────────
+// ── Parallax Hero (desktop only — ปิดบน mobile เพื่อไม่ให้ scroll กระตุก) ──
 (function() {
+  if (window.matchMedia('(max-width:640px)').matches) return;
   var pageHead = document.getElementById('pageHead');
   var layerOrbs = document.getElementById('phLayerOrbs');
   var content = document.getElementById('phContent');
@@ -1297,7 +1349,8 @@ function render(){
 }
 
 function openModal(id){
-  const t=TEMPLES.find(x=>x.id===id)||TEMPLES[0];
+  const t=TEMPLES.find(x=>x.id===id);
+  if(!t) return;
   const zn=t.zone_num||0;
   document.getElementById('mName').textContent=t.name_th||t.org_th||'—';
   document.getElementById('mNameEn').textContent=t.name_en||t.org_en||'';
@@ -1396,6 +1449,20 @@ document.getElementById('navToggle').addEventListener('click',()=>{
   document.getElementById('navLinks').classList.toggle('open');
 });
 
+// Mobile dropdown toggle (hover ไม่ทำงานบน touch)
+document.querySelectorAll('.nav-item').forEach(item=>{
+  const link=item.querySelector('.nav-link');
+  const dropdown=item.querySelector('.dropdown');
+  if(!link||!dropdown) return;
+  link.addEventListener('click',e=>{
+    if(window.innerWidth>640) return;
+    e.preventDefault();
+    const isOpen=item.classList.contains('open');
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('open'));
+    if(!isOpen) item.classList.add('open');
+  });
+});
+
 // ── Admin Auth ────────────────────────────────────────────────
 async function doLogin() {
   const email = document.getElementById('adminEmail').value.trim();
@@ -1418,6 +1485,7 @@ async function doLogout() {
   if (bar) bar.style.display = 'none';
   const mainEl = document.querySelector('.main') || document.querySelector('main') || document.body;
   if (mainEl) mainEl.style.paddingBottom = '';
+  document.documentElement.style.setProperty('--toast-bottom', '70px');
   showToast('ออกจากระบบแล้ว', 'success');
   render();
 }
@@ -1431,6 +1499,7 @@ function showAdminBar() {
   setTimeout(() => {
     const barH = bar ? bar.offsetHeight : 90;
     if (mainEl) mainEl.style.paddingBottom = (barH + 12) + 'px';
+    document.documentElement.style.setProperty('--toast-bottom', (barH + 16) + 'px');
   }, 50);
   resetInactiveTimer();
 }
@@ -1620,8 +1689,10 @@ async function deleteTemple() {
   const id = document.getElementById('editId').value;
   const name = document.getElementById('eName_th').value || id;
   if (!await showConfirm(`ลบวัด "${name}" ออกจากระบบ?\nไม่สามารถกู้คืนได้`)) return;
-  // ลบรูปใน storage ด้วย (ถ้ามี)
-  await _sb.storage.from('temple-logos').remove([id + '.jpg']);
+  // ลบรูปใน storage ด้วย (ทุก format เผื่อ upload มาเป็น png/webp)
+  await Promise.all(['jpg','jpeg','png','webp'].map(ext =>
+    _sb.storage.from('temple-logos').remove([id + '.' + ext])
+  ));
   const { error } = await _sb.from('temples').delete().eq('id', id);
   if (error) { showToast('ลบไม่สำเร็จ: ' + error.message, 'error'); return; }
   TEMPLES = TEMPLES.filter(x => x.id !== id);
