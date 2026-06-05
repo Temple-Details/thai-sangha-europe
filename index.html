@@ -742,13 +742,13 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
 }
 .stat-block:hover .stat-block-accent{opacity:1;}
 @media(max-width:640px){
-  .stats-band-inner{padding:0;flex-wrap:wrap;}
-  .stat-block{flex:1 1 50%;padding:16px 10px;border-right:none;border-bottom:1px solid rgba(255,255,255,0.08);}
-  .stat-block:nth-child(odd){border-right:1px solid rgba(255,255,255,0.1);}
-  .stat-block:nth-child(3),.stat-block:nth-child(4){border-bottom:none;}
-  .stat-block:nth-child(odd):last-child{border-right:none;}
-  .stat-num{font-size:1.8rem;}
-  .stat-lbl{font-size:0.68rem;}
+  .stats-band-inner{padding:0;flex-wrap:nowrap;}
+  .stat-block{flex:1 1 0;padding:14px 6px;border-right:1px solid rgba(255,255,255,0.1);border-bottom:none;}
+  .stat-block:last-child{border-right:none;}
+  .stat-num{font-size:1.5rem;}
+  .stat-lbl{font-size:0.62rem;}
+  .flip-digit{width:26px;height:36px;font-size:1.35rem;border-radius:4px;}
+  .flip-counter{gap:2px;min-height:36px;}
 }
 
 /* ── BADGE ใหม่ ── */
@@ -2722,6 +2722,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   loadTemples();
   loadSiteSettings();
+  if (window.innerWidth <= 640)
+    document.getElementById('searchInput').placeholder = 'ค้นหาวัด...';
 });
 </script>
 
