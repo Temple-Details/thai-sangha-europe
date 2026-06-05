@@ -309,6 +309,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
   font-size:0.78rem;color:var(--text3);
   white-space:nowrap;
 }
+@media(max-width:640px){.result-info{display:none;}}
 
 /* ── GRID ── */
 .main{max-width:1400px;margin:0 auto;padding:20px 20px 60px;}
@@ -548,17 +549,6 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);min
     content:'';position:absolute;right:0;top:0;bottom:0;width:80px;
     background:linear-gradient(to right,transparent,var(--white) 40%);
     pointer-events:none;z-index:1;
-  }
-  /* result-info ลอยขวา ทับบน gradient */
-  .result-info{
-    position:absolute;right:8px;top:50%;
-    transform:translateY(-50%);
-    background:var(--white);
-    padding:2px 6px;
-    border-left:1px solid var(--border);
-    border-radius:3px;
-    z-index:2;
-    margin-left:0;
   }
 }
 
