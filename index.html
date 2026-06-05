@@ -1407,6 +1407,11 @@ function openModal(id){
   `).join('');
 
   const ov = document.getElementById('overlay');
+  // ซ่อน admin bar บน mobile ขณะดู modal เพื่อให้ content ไม่ถูกบัง
+  const adminBar = document.getElementById('adminBar');
+  if (adminBar && window.innerWidth <= 640) adminBar.style.visibility = 'hidden';
+  ov.style.paddingBottom = '20px';
+  document.querySelector('.modal').style.maxHeight = '';
   ov.style.display = 'flex';
   ov.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1421,6 +1426,8 @@ function closeModal(){
     ov.classList.remove('open','closing');
     ov.style.display = 'none';
     document.body.style.overflow = '';
+    const adminBar = document.getElementById('adminBar');
+    if (adminBar) adminBar.style.visibility = '';
   }, 220);
 }
 
