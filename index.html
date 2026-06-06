@@ -1260,6 +1260,14 @@ const FLAG = {
   'ฮังการี':'🇭🇺','กรีซ':'🇬🇷','มอลต้า':'🇲🇹','มอลตา':'🇲🇹',
   'อังกฤษ':'🇬🇧','สหราชอาณาจักร':'🇬🇧',
   'โปแลนด์':'🇵🇱','โปรตุเกส':'🇵🇹','สเปน':'🇪🇸',
+  'ไอร์แลนด์':'🇮🇪','โมนาโก':'🇲🇨','อันดอร์รา':'🇦🇩',
+  'ลิกเตนสไตน์':'🇱🇮','สโลวาเกีย':'🇸🇰',
+  'ไซปรัส':'🇨🇾','โครเอเชีย':'🇭🇷','สโลวีเนีย':'🇸🇮',
+  'เซอร์เบีย':'🇷🇸','บัลแกเรีย':'🇧🇬','โรมาเนีย':'🇷🇴',
+  'เอสโตเนีย':'🇪🇪','ลัตเวีย':'🇱🇻','ลิทัวเนีย':'🇱🇹',
+  'บอสเนียและเฮอร์เซโกวีนา':'🇧🇦','มอนเตเนโกร':'🇲🇪',
+  'แอลเบเนีย':'🇦🇱','มาซิโดเนียเหนือ':'🇲🇰','โคโซโว':'🇽🇰',
+  'มอลโดวา':'🇲🇩','ยูเครน':'🇺🇦','เบลารุส':'🇧🇾',
 };
 
 const ZONE_META = {
@@ -2489,7 +2497,16 @@ function previewImportFile(file) {
         'เบลเยียม':1,'เบลเยี่ยม':1,'belgium':1,
         'ฝรั่งเศส':1,'ฝรั่งเศษ':1,'france':1,
         'ลักแซมบวร์ก':1,'ลักเซมเบิร์ก':1,'luxembourg':1,
+        'สหราชอาณาจักร':1,'อังกฤษ':1,'united kingdom':1,'uk':1,'britain':1,
+        'ไอร์แลนด์':1,'ireland':1,
+        'สเปน':1,'spain':1,
+        'โปรตุเกส':1,'portugal':1,
+        'โมนาโก':1,'monaco':1,
+        'อันดอร์รา':1,'andorra':1,
         'เยอรมนี':2,'เยอรมัน':2,'germany':2,'deutschland':2,
+        'โปแลนด์':2,'poland':2,
+        'สโลวาเกีย':2,'slovakia':2,
+        'ลิกเตนสไตน์':2,'liechtenstein':2,
         'เดนมาร์ก':3,'denmark':3,
         'นอร์เวย์':3,'norway':3,
         'ฟินแลนด์':3,'finland':3,
@@ -2501,6 +2518,23 @@ function previewImportFile(file) {
         'อิตาลี':4,'italy':4,
         'สวิตเซอร์แลนด์':4,'สวิส':4,'switzerland':4,
         'ออสเตรีย':4,'austria':4,
+        'ไซปรัส':4,'cyprus':4,
+        'โครเอเชีย':4,'croatia':4,
+        'สโลวีเนีย':4,'slovenia':4,
+        'เซอร์เบีย':4,'serbia':4,
+        'บัลแกเรีย':4,'bulgaria':4,
+        'โรมาเนีย':4,'romania':4,
+        'เอสโตเนีย':4,'estonia':4,
+        'ลัตเวีย':4,'latvia':4,
+        'ลิทัวเนีย':4,'lithuania':4,
+        'บอสเนียและเฮอร์เซโกวีนา':4,'บอสเนีย':4,'bosnia':4,
+        'มอนเตเนโกร':4,'montenegro':4,
+        'แอลเบเนีย':4,'albania':4,
+        'มาซิโดเนียเหนือ':4,'north macedonia':4,'macedonia':4,
+        'โคโซโว':4,'kosovo':4,
+        'มอลโดวา':4,'moldova':4,
+        'ยูเครน':4,'ukraine':4,
+        'เบลารุส':4,'belarus':4,
       };
       const resolveZone = c => COUNTRY_ZONE[(c||'').toLowerCase().trim()] || null;
 
@@ -2819,16 +2853,25 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
       <div class="form-row">
         <label>ประเทศ</label>
-        <select id="eCountry">
+        <select id="eCountry" onchange="(function(){const m={'เนเธอร์แลนด์':1,'เบลเยียม':1,'เบลเยี่ยม':1,'ฝรั่งเศส':1,'ลักแซมบวร์ก':1,'สหราชอาณาจักร':1,'ไอร์แลนด์':1,'สเปน':1,'โปรตุเกส':1,'โมนาโก':1,'อันดอร์รา':1,'เยอรมนี':2,'โปแลนด์':2,'สโลวาเกีย':2,'ลิกเตนสไตน์':2,'เดนมาร์ก':3,'นอร์เวย์':3,'ฟินแลนด์':3,'สวีเดน':3,'ไอซ์แลนด์':3,'กรีซ':4,'เช็ก':4,'ฮังการี':4,'อิตาลี':4,'สวิตเซอร์แลนด์':4,'ออสเตรีย':4,'ไซปรัส':4,'โครเอเชีย':4,'สโลวีเนีย':4,'เซอร์เบีย':4,'บัลแกเรีย':4,'โรมาเนีย':4,'เอสโตเนีย':4,'ลัตเวีย':4,'ลิทัวเนีย':4,'บอสเนียและเฮอร์เซโกวีนา':4,'มอนเตเนโกร':4,'แอลเบเนีย':4,'มาซิโดเนียเหนือ':4,'โคโซโว':4,'มอลโดวา':4,'ยูเครน':4,'เบลารุส':4};const z=m[this.value];if(z){document.getElementById('eZone').value=z;document.getElementById('eZoneNum').value=z;}})()">
           <option value="">— เลือกประเทศ —</option>
           <optgroup label="เขต ๑ (ยุโรปตะวันตก)">
             <option>เนเธอร์แลนด์</option>
             <option>เบลเยียม</option>
             <option>ฝรั่งเศส</option>
             <option>ลักแซมบวร์ก</option>
+            <option>สหราชอาณาจักร</option>
+            <option>ไอร์แลนด์</option>
+            <option>สเปน</option>
+            <option>โปรตุเกส</option>
+            <option>โมนาโก</option>
+            <option>อันดอร์รา</option>
           </optgroup>
           <optgroup label="เขต ๒ (ยุโรปกลาง)">
             <option>เยอรมนี</option>
+            <option>โปแลนด์</option>
+            <option>สโลวาเกีย</option>
+            <option>ลิกเตนสไตน์</option>
           </optgroup>
           <optgroup label="เขต ๓ (สแกนดิเนเวีย)">
             <option>เดนมาร์ก</option>
@@ -2845,6 +2888,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             <option>มอลต้า</option>
             <option>สวิตเซอร์แลนด์</option>
             <option>ออสเตรีย</option>
+            <option>ไซปรัส</option>
+            <option>โครเอเชีย</option>
+            <option>สโลวีเนีย</option>
+            <option>เซอร์เบีย</option>
+            <option>บัลแกเรีย</option>
+            <option>โรมาเนีย</option>
+            <option>เอสโตเนีย</option>
+            <option>ลัตเวีย</option>
+            <option>ลิทัวเนีย</option>
+            <option>บอสเนียและเฮอร์เซโกวีนา</option>
+            <option>มอนเตเนโกร</option>
+            <option>แอลเบเนีย</option>
+            <option>มาซิโดเนียเหนือ</option>
+            <option>โคโซโว</option>
+            <option>มอลโดวา</option>
+            <option>ยูเครน</option>
+            <option>เบลารุส</option>
           </optgroup>
         </select>
       </div>
